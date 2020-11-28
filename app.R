@@ -89,7 +89,9 @@ ui <- fluidPage(
         "Model",
         tabPanel("Poverty-Related Indicators"),
         "Other Resources",
-        tabPanel("PDF")
+        tabPanel("PDF",
+                 tags$iframe(style="height:800px; width:100%; scrolling=yes", 
+                             src="SSA_note_draft.pdf"))
     )
 )
 # Define server logic ----
