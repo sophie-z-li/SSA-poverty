@@ -11,7 +11,8 @@ ui <- fluidPage(
     theme = shinytheme("slate"),
     
     titlePanel(
-        h1("Evaluating COVID-19's Impact on Poverty in Sub-Saharan Africa", align = "center")),
+        h1("Analyzing COVID-19's Impact on Poverty in Sub-Saharan Africa", 
+           align = "center")),
     
     navlistPanel(
         "About",
@@ -38,26 +39,8 @@ ui <- fluidPage(
                    href = "https://openknowledge.worldbank.org/handle/10986/33765"),"
                    of COVID-19’s effect on poverty levels in Sub-Saharan Africa 
                    (SSA), using GDP growth projections from the October 2020 
-                   World Economic Outlook (WEO) database. The original
-                   projections were created based on April 2020 WEO numbers."),
-                 p("The ongoing pandemic is expected to drastically slow GDP 
-                   growth in SSA by almost 7 percentage points compared to 
-                   pre-pandemic forecasts for 2020, which is 2 percentage points
-                   higher than the April 2020 projections. The new GDP also 
-                   estimates a significant increase in the total number of 
-                   additional poor due to the crisis, from 17.7 to 26.6 million,
-                   according to the international poverty line of $1.90 per day 
-                   in 2011 PPP. Additionally, the estimates suggest a slightly 
-                   larger increase in the poverty rate, by 2.4 instead of the 
-                   previously estimated 1.6 percentage points. By region, the 
-                   poverty rate is expected to increase around 3 percentage 
-                   points for Western/Central Africa and by almost 2 percentage
-                   points for Eastern/Southern Africa."), 
-                 p("Preliminary data from high-frequency phone surveys also 
-                   indicate major disruptions to labor markets, household 
-                   income, food security, and educational attainment within 
-                   the SSA region."),
-        ),
+                   World Economic Outlook (WEO) database. Prior
+                   projections were created based on April 2020 WEO numbers.")),
         tabPanel("Methodology",
                  br(),
                  h3("Calculating Poverty"),
@@ -83,9 +66,26 @@ ui <- fluidPage(
                  h5("Formulas"),
                  HTML('<left><img src="formulas.png" width="400"></left>')),
         "Data",
-        tabPanel("Regional Data"),
+        tabPanel("Regional Data",
+                 p("The ongoing pandemic is expected to drastically slow GDP 
+                   growth in SSA by almost 7 percentage points compared to 
+                   pre-pandemic forecasts for 2020, which is 2 percentage points
+                   higher than the April 2020 projections. The new GDP also 
+                   estimates a significant increase in the total number of 
+                   additional poor due to the crisis, from 17.7 to 26.6 million,
+                   according to the international poverty line of $1.90 per day 
+                   in 2011 PPP. Additionally, the estimates suggest a slightly 
+                   larger increase in the poverty rate, by 2.4 instead of the 
+                   previously estimated 1.6 percentage points. By region, the 
+                   poverty rate is expected to increase around 3 percentage 
+                   points for Western/Central Africa and by almost 2 percentage
+                   points for Eastern/Southern Africa.")),
         tabPanel("Country-Level Data"),
-        tabPanel("High-Frequency Phone Surveys"),
+        tabPanel("High-Frequency Phone Surveys",
+                 p("Preliminary data from high-frequency phone surveys 
+                   indicate major disruptions to labor markets, household 
+                   income, food security, and educational attainment within 
+                   the SSA region.")),
         "Model",
         tabPanel("Poverty-Related Indicators"),
         "Other Resources",
