@@ -5,6 +5,8 @@ library(janitor)
 library(ggthemes)
 library(readxl)
 library(ggrepel)
+library(gganimate)
+theme_set(theme_bw())
 
 region_poverty <- read_xlsx("raw_data/finaldata.xlsx", 1)
 country_poverty <- read_xlsx("raw_data/finaldata.xlsx", 2)
@@ -92,9 +94,6 @@ ui <- fluidPage(
                    Mauritania, Niger, Nigeria, Republic of Congo, Senegal,
                    Sierra Leone, The Gambia, and Togo."),
                  br(),
-                 
-                 # LMAO HOW DO I SET A REGION VECTOR!!!!!
-                 
                  sidebarLayout(
                      sidebarPanel(
                          selectInput("select_region",
@@ -123,6 +122,7 @@ ui <- fluidPage(
                    points for Eastern/Southern Africa.")),
         tabPanel("Country-Level Data"),
         tabPanel("High-Frequency Phone Surveys",
+                 br(),
                  h3("COVID-19 High Frequency Monitoring"),
                  p("The following data was pulled from the World Bank's
                    COVID-19 High-Frequency Monitoring beta (link to
@@ -254,7 +254,7 @@ server <- function(input, output) {
                   plot.title = element_text(hjust = 0.5))
         
     })
-    
+
     output$PlotLabor <- renderPlot({
         ggplot(labor, aes(x = poverty_increase, y = working_stop, color = country)) +
             geom_point() +
