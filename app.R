@@ -5,6 +5,10 @@ library(janitor)
 library(ggthemes)
 library(readxl)
 
+region_poverty <- read_xlsx("raw_data/finaldata.xlsx", 1)
+country_poverty <- read_xlsx("raw_data/finaldata.xlsx", 2)
+country_gdp <- read_xlsx("raw_data/finaldata.xlsx", 2)
+
 # Define UI ----
 ui <- fluidPage(
     
@@ -25,7 +29,7 @@ ui <- fluidPage(
                  p("My name is Sophie, and I am a junior at Harvard College
                    studying Philosophy. As a native Houstonian, I love all
                    things barbeque and am the proud owner of two miniature
-                   cacti. You can find the link to my Github here."),
+                   cacti. You can find the link to my Github", a("here", href ="https://github.com/sophie-z-li")),
                  br(),
                  h3("About this Project"),
                  p("For my final project, I partnered with the
@@ -67,6 +71,38 @@ ui <- fluidPage(
                  HTML('<left><img src="formulas.png" width="400"></left>')),
         "Data",
         tabPanel("Regional Data",
+                 h3("Comparing Poverty Differences By Region"),
+                 p("This interactive feature allows you to visualize changes
+                   in poverty over time in different SSA regions. In the 
+                   drop-down menu below, select the region of interest."),
+                 p("The Eastern/Central region (AFE) includes Angola, Botswana, 
+                   Burundi, Comoros, the Democratic Republic of the Congo, 
+                   Eswantini, Ethiopia, Kenya, Lesotho, Madagascar, Malawi, 
+                   Mauritius, Mozambique, Namibia, Rwanda, São Tomé and Príncipe,
+                  Seychelles, South Africa, South Sudan, Sudan, Tanzania,
+                   Uganda, Zambia, and Zimbabwe."),
+                 p("The Western/Southern region (AFW) includes Benin, Burkina Faso,
+                   Cameroon, Cabo Verde, Central African Republic, Chad, Côte
+                   d'Ivoire, Gabon, Ghana, Guinea, Guinea-Bissau, Liberia, Mali,
+                   Mauritania, Niger, Nigeria, Republic of Congo, Senegal,
+                   Sierra Leone, The Gambia, and Togo."),
+                 br(),
+                 
+                 # LMAO HOW DO I SET A REGION VECTOR!!!!!
+                 
+                 sidebarLayout(
+                     sidebarPanel(
+                         selectInput("select_region",
+                                     "Select Region",
+                                     c("Sub-Saharan" = "SSA", 
+                                       "Eastern/Central" = "AFE", 
+                                       "Western/Southern" = "AFW"))
+                     ),
+                     mainPanel(
+                         plotOutput("Plot2", width = 800)
+                     )
+                 ),
+                 br(),
                  p("The ongoing pandemic is expected to drastically slow GDP 
                    growth in SSA by almost 7 percentage points compared to 
                    pre-pandemic forecasts for 2020, which is 2 percentage points
@@ -96,6 +132,30 @@ ui <- fluidPage(
 )
 # Define server logic ----
 server <- function(input, output) {
+    
+    # CHANGE STUFF HERE
+    
+    output$Plot2 <- renderPlot({
+        region_poverty %>%
+            filter(year >= 2010) %>%
+            filter(region == input$select_region) %>%
+            ggplot(aes(x = year, y = poverty, color = type)) +
+            geom_line(size = 1) +
+            geom_point(size = 2) +
+            labs(x = "Year",
+                 y = "Poverty Rate") + 
+            ggtitle(input$select_region) +
+            ylim(32, 48) +
+            scale_color_discrete(name = "Estimates",
+                                labels = c("Pre-Pandemic", 
+                                           "Post-Pandemic (POVCAL)", 
+                                           "Post-Pandemic (MPO)")) +
+            theme_bw() +
+            theme(panel.border =element_rect(color = "black", fill = NA, 
+                                             size =3),
+                  plot.title = element_text(hjust = 0.5))
+        
+    })
     
 }
 
