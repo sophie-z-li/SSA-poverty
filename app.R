@@ -4,11 +4,16 @@ library(tidyverse)
 library(janitor)
 library(ggthemes)
 library(readxl)
+library(ggrepel)
 
 region_poverty <- read_xlsx("raw_data/finaldata.xlsx", 1)
 country_poverty <- read_xlsx("raw_data/finaldata.xlsx", 2)
-country_gdp <- read_xlsx("raw_data/finaldata.xlsx", 2)
+country_gdp <- read_xlsx("raw_data/finaldata.xlsx", 3)
 
+labor <- read_xlsx("raw_data/ssa_hfs.xlsx", 1)
+income <- read_xlsx("raw_data/ssa_hfs.xlsx", 2)
+food <- read_xlsx("raw_data/ssa_hfs.xlsx", 3)
+education <- read_xlsx("raw_data/ssa_hfs.xlsx", 4)
 # Define UI ----
 ui <- fluidPage(
     
@@ -99,7 +104,7 @@ ui <- fluidPage(
                                        "Western/Southern" = "AFW"))
                      ),
                      mainPanel(
-                         plotOutput("Plot2", width = 800)
+                         plotOutput("PlotRegional", width = 800)
                      )
                  ),
                  br(),
@@ -118,10 +123,103 @@ ui <- fluidPage(
                    points for Eastern/Southern Africa.")),
         tabPanel("Country-Level Data"),
         tabPanel("High-Frequency Phone Surveys",
-                 p("Preliminary data from high-frequency phone surveys 
-                   indicate major disruptions to labor markets, household 
-                   income, food security, and educational attainment within 
-                   the SSA region.")),
+                 h3("COVID-19 High Frequency Monitoring"),
+                 p("The following data was pulled from the World Bank's
+                   COVID-19 High-Frequency Monitoring beta (link to
+                   external dashboard). Preliminary data from high-frequency 
+                   phone surveys indicate major disruptions to labor markets, 
+                   household income, food security, and educational attainment 
+                   within the SSA region."),
+                 br(),
+                 h4("1. Labor"),
+                 p("The labor market in the SSA region has been negatively 
+                    impacted by the COVID-19 outbreak. Over 29 percent of 
+                    respondents reported losing their job after the outbreak 
+                    (for the 11 surveyed countries with this indicator). In 
+                    both Gabon and Kenya, 61 percent of respondents reported 
+                    that they had stopped working since the COVID-19 outbreak. 
+                    In general, employed respondents were more likely to be 
+                    involved with farming activities than non-farm 
+                    enterprises."),
+                 h5("Figure 1a. Scatterplot depicting relationship between 
+                    poverty rate increases and labor disruption by country."),
+                 fluidRow(
+                     column(1, align = "center",
+                     imageOutput("PlotLabor", width = 800)
+                     )
+                 ),
+                 br(),
+                 h4("2. Income"),
+                 p("Income has sharply decreased in all surveyed SSA 
+                   countries, particularly for non-farming enterprises. In 
+                   Gabon, Malawi, and Zambia over 60 percent of households 
+                   reported a decrease in total income since the pandemic. 
+                   For wage income specifically, over 24 percent of households, 
+                   with available information, reported a decrease. In half of 
+                   these countries, over 53 percent of households reported a 
+                   decrease in wage income, with Malawi being the highest at 
+                   86 percent. The impact on income was more severe for non-farm
+                   family businesses than farm businesses, although for both 
+                   sectors, at least 24 percent of households in all surveyed 
+                   countries reported an income decrease. For the majority of 
+                   countries that were surveyed on remittances, over 58 percent 
+                   of households reported a decrease in remittances."),
+                 h5("Figure 2a. Scatterplot depicting relationship between 
+                    poverty rate increases and food security by country."),
+                 fluidRow(
+                     column(1, align = "center",
+                     imageOutput("PlotIncome", width = 800)
+                     )
+                 ),
+                 br(),
+                 h4("3. Food"),
+                 p("The pandemic has created damaging consequences on food 
+                   security for people who live in SSA countries. For half of 
+                   the 10 countries that were surveyed on this indicator, over 
+                   64 percent of respondents reported skipping a meal in the 
+                   last 30 days due to lack of money or resources. Food 
+                   security levels did not appear to correlate with the 
+                   industry sector that a person worked in (the four categories
+                   were agriculture, commerce, mining/manufacturing, and other 
+                   services). There also did not seem to be a link between food 
+                   security and urban/rural residents. "),
+                 h5("Figure 3a. Scatterplot depicting relationship between 
+                    poverty rate increases and income disruption by country."),
+                 fluidRow(
+                     column(1, align = "center",
+                     imageOutput("PlotFood", width = 800)
+                     )
+                 ),
+                 br(),
+                 h4("4. Education"),
+                 p("The pandemic has led to a significant decrease in 
+                   school-aged children’s educational engagement. Before the 
+                   pandemic, over 71 percent of all households with school-aged 
+                   children of the 11 surveyed countries (aside from Gabon) had
+                   children enrolled in primary and/or secondary schools. 
+                   However, since school closures, less than 24 percent of 
+                   households with school-aged children in all countries had 
+                   children who had completed any school assignments. School 
+                   closures have led to a disproportionate impact on different 
+                   SSA countries in terms of non-school educational engagement. 
+                   In wealthier countries, school-aged children have been able 
+                   to engage in alternative educational activities more than 
+                   school-aged children in poorer countries. In general, 
+                   school-aged children in urban areas were more likely to be 
+                   engaged in learning activities compared to those in rural 
+                   areas. This is likely due to rural areas having less access 
+                   to electricity, and by extension, the scarcity of 
+                   electricity-dependent learning resources such as computers, 
+                   radios, and internet all pose problems for educational 
+                   attainment for school-aged children in rural areas."),
+                 h5("Figure 4a. Scatterplot depicting relationship between 
+                    poverty rate increases and school-aged children's 
+                    educational engagement by country."),
+                 fluidRow(
+                     column(1, align = "center",
+                     imageOutput("PlotEducation", width = 800)
+                     )
+                 )),
         "Model",
         tabPanel("Poverty-Related Indicators"),
         "Other Resources",
@@ -133,9 +231,9 @@ ui <- fluidPage(
 # Define server logic ----
 server <- function(input, output) {
     
-    # CHANGE STUFF HERE
+    # Below is my interactive component for regional poverty
     
-    output$Plot2 <- renderPlot({
+    output$PlotRegional <- renderPlot({
         region_poverty %>%
             filter(year >= 2010) %>%
             filter(region == input$select_region) %>%
@@ -156,6 +254,63 @@ server <- function(input, output) {
                   plot.title = element_text(hjust = 0.5))
         
     })
+    
+    output$PlotLabor <- renderPlot({
+        ggplot(labor, aes(x = poverty_increase, y = working_stop, color = country)) +
+            geom_point() +
+            geom_text(aes(label = country, vjust = 2), size = 3.5, color = "black") +
+            labs(y = "Percentage of Responders Who Reported Having \nStopped Working Since the COVID-19 Outbreak",
+                 x = "Increase in Poverty (percentage points)") +
+            xlim(0, 5) +
+            ylim(0, 100) +
+            scale_color_discrete("Country") +
+            theme_bw() +
+            theme(legend.position = "none")
+        
+    })
+    
+    output$PlotIncome <- renderPlot({
+        ggplot(income, aes(x = poverty_increase, y = decrease_total_income, color = Country)) +
+            geom_point() +
+            geom_text(aes(label = Country, vjust = 2), size = 3.5, color = "black") +
+            labs(y = "Percentage of Responders Who Reported \n a Decrease in Total Income",
+                 x = "Increase in Poverty (percentage points)") +
+            theme_bw() +
+            theme(legend.position = "none") +
+            ylim(0, 100) +
+            xlim(0, 5)
+        
+    })
+    
+    output$PlotFood <- renderPlot({
+        ggplot(food, aes(x = poverty_increase, y = skip_meal, color = country)) +
+            geom_point() +
+            geom_text(aes(label = country, vjust = 2), size = 3.5, color = "black") +
+            labs(y = "Percentage of Responders Who Reported \n Skipping a Meal in the Past 30 Days",
+                 x = "Increase in Poverty (percentage points)") +
+            theme_bw() +
+            theme(legend.position = "none") +
+            ylim(0, 100) +
+            xlim(-1, 5) +
+            geom_vline(xintercept = 0, linetype = "dashed")
+        
+    })
+    
+    output$PlotEducation <- renderPlot({
+        ggplot(education, aes(x = poverty_increase, y = education, color = Country)) +
+            geom_point() +
+            geom_text_repel(aes(label = Country, vjust = 2), size = 3.5, color = "black", segment.color = "transparent") +
+            labs(y = "Percentage of Responders Who Reported Their \n School-Aged Children Were Still Engaged \n in any Educational Learning",
+                 x = "Increase in Poverty (percentage points)") +
+            scale_color_discrete("Country") +
+            theme_bw() +
+            theme(legend.position = "none") +
+            ylim(0, 100) +
+            xlim(-1, 5) +
+            geom_vline(xintercept = 0, linetype = "dashed")
+        
+    })
+    
     
 }
 
