@@ -106,7 +106,8 @@ ui <- fluidPage(
                                        "Western/Southern" = "AFW"))
                      ),
                      mainPanel(
-                         plotOutput("PlotRegional", width = 800)
+                         plotOutput("PlotsRegional", width = 800),
+                         textOutput("PlotsRegionalText")
                      )
                  ),
                  br(),
@@ -236,16 +237,17 @@ server <- function(input, output) {
     
     # Below is my interactive component for regional poverty
     
-    output$PlotRegional <- renderPlot({
+    output$PlotsRegional <- renderPlot({
+        if(input$select_region == "SSA") {
         region_poverty %>%
             filter(year >= 2010) %>%
             filter(region == input$select_region) %>%
             ggplot(aes(x = year, y = poverty, color = type)) +
             geom_line(size = 1) +
             geom_point(size = 2) +
-            labs(x = "Year",
+            labs(title = "This is the first plot",
+                 x = "Year",
                  y = "Poverty Rate") + 
-            ggtitle(input$select_region) +
             ylim(32, 48) +
             scale_color_discrete(name = "Estimates",
                                 labels = c("Pre-Pandemic", 
@@ -255,7 +257,80 @@ server <- function(input, output) {
             theme(panel.border =element_rect(color = "black", fill = NA, 
                                              size =3),
                   plot.title = element_text(hjust = 0.5))
+        }
+        else{
+            if(input$select_region == "AFE"){
+                region_poverty %>%
+                    filter(year >= 2010) %>%
+                    filter(region == input$select_region) %>%
+                    ggplot(aes(x = year, y = poverty, color = type)) +
+                    geom_line(size = 1) +
+                    geom_point(size = 2) +
+                    labs(title = "This is the second plot",
+                         x = "Year",
+                         y = "Poverty Rate") + 
+                    ylim(32, 48) +
+                    scale_color_discrete(name = "Estimates",
+                                         labels = c("Pre-Pandemic", 
+                                                    "Post-Pandemic (POVCAL)", 
+                                                    "Post-Pandemic (MPO)")) +
+                    theme_bw() +
+                    theme(panel.border =element_rect(color = "black", fill = NA, 
+                                                     size =3),
+                          plot.title = element_text(hjust = 0.5))    
+            }
         
+        else{
+            if(input$select_region == "AFW") {
+                region_poverty %>%
+                    filter(year >= 2010) %>%
+                    filter(region == input$select_region) %>%
+                    ggplot(aes(x = year, y = poverty, color = type)) +
+                    geom_line(size = 1) +
+                    geom_point(size = 2) +
+                    labs(title = "This is the third plot",
+                         x = "Year",
+                         y = "Poverty Rate") + 
+                    ylim(32, 48) +
+                    scale_color_discrete(name = "Estimates",
+                                         labels = c("Pre-Pandemic", 
+                                                    "Post-Pandemic (POVCAL)", 
+                                                    "Post-Pandemic (MPO)")) +
+                    theme_bw() +
+                    theme(panel.border =element_rect(color = "black", fill = NA, 
+                                                     size =3),
+                          plot.title = element_text(hjust = 0.5))
+            }
+        }}
+        
+    })
+    
+    output$PlotsRegionalText <- renderText({
+        if(input$select_region == "SSA") {
+            "The ongoing pandemic is expected to drastically slow GDP 
+            growth in SSA by almost 7 percentage points compared to 
+            pre-pandemic forecasts for 2020, which is 2 percentage points
+            higher than the April 2020 projections. The new GDP also 
+            estimates a significant increase in the total number of 
+            additional poor due to the crisis, from 17.7 to 26.6 million,
+            according to the international poverty line of $1.90 per day 
+            in 2011 PPP. Additionally, the estimates suggest a slightly 
+            larger increase in the poverty rate, by 2.4 instead of the 
+            previously estimated 1.6 percentage points."
+        }
+        
+        else {
+            if(input$select_region == "AFE") {
+                "By region, the poverty rate is expected to increase by almost 
+                2 percentage points for Eastern/Southern Africa."
+            }
+        
+        else {
+            if(input$select_region == "AFW") {
+                "By region, the poverty rate is expected to increase around 3 
+                percentage points for Western/Central Africa."
+            }
+        }}
     })
 
     output$PlotLabor <- renderPlot({

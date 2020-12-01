@@ -35,6 +35,7 @@ indicator_data <- read_csv("raw_data/ESGData.csv", col_types =
   "LBR", "LSO", "MDG", "MLI", "MOZ", "MRT", "MUS", "MWI", "NAM", "NER", "NGA",
   "RWA", "SDN", "SEN", "SLE", "SSD", "STP", "SWZ", "SYC", "TCD", "TGO", "TZA", 
   "UGA", "ZAF", "ZMB", "ZWE") & year == 2000:2019) %>%
+  group_by(year) %>%
   pivot_wider(id_cols = NULL, 
               names_from = indicator_name, 
               values_from = value) %>%
@@ -52,13 +53,17 @@ indicator_data <- read_csv("raw_data/ESGData.csv", col_types =
 # How do I clean these names?
 # How do I make the years match up?
 
+
+
+
+
+```
+
+```{r}
 carbon_model <- stan_glm(data = indicator_data,
                          family = gaussian,
                          formula = co2_emissions_metric_tons_per_capita ~ 
                            control_of_corruption_estimate + access_to_clean_fuels_and_technologies_for_cooking_percent_of_population,
                          refresh = 0)
-
-
-
 ```
 
