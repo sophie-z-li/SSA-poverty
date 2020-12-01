@@ -1,0 +1,12 @@
+name: SSA-poverty
+title: SSA-poverty
+username:
+account: sophie-z-li
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3326469
+bundleId: 3924579
+url: https://sophie-z-li.shinyapps.io/SSA-poverty/
+when: 1606769923.14979
+asMultiple: FALSE
+asStatic: FALSE

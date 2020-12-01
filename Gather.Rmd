@@ -1,0 +1,64 @@
+---
+title: "Gather.Rmd"
+author: "Sophie Li"
+date: "11/30/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(janitor)
+library(readxl)
+library(rstanarm)
+```
+
+```{r}
+
+indicator_data <- read_csv("raw_data/ESGData.csv", col_types = 
+                           cols(
+  .default = col_double(),
+  `Country Name` = col_character(),
+  `Country Code` = col_character(),
+  `Indicator Name` = col_factor(),
+  `Indicator Code` = col_character()
+)) %>%
+  clean_names() %>%
+  select(-x2050, -x66) %>%
+  pivot_longer(cols = x1960:x2019,
+               names_to = "year",
+               values_to = "value") %>%
+  mutate(year = as.double(str_replace(year, "x", ""))) %>%
+  filter(country_code %in% c("AGO", "BDI", "BEN", "BFA", "BWA", "CAF", "CIV", 
+  "CMR", "COD", "COM", "CPV", "ETH", "GAB", "GHA", "GIN", "GMB", "GNB", "KEN",
+  "LBR", "LSO", "MDG", "MLI", "MOZ", "MRT", "MUS", "MWI", "NAM", "NER", "NGA",
+  "RWA", "SDN", "SEN", "SLE", "SSD", "STP", "SWZ", "SYC", "TCD", "TGO", "TZA", 
+  "UGA", "ZAF", "ZMB", "ZWE") & year == 2000:2019) %>%
+  pivot_wider(id_cols = NULL, 
+              names_from = indicator_name, 
+              values_from = value) %>%
+  clean_names()
+
+# Ended up not using the below two lines of indented code because they were not 
+# relevant to my model.
+
+    # country_poverty <- read_xlsx("raw_data/finaldata.xlsx", 2)
+
+    # indicator_data_cleaned <- right_join(indicator_data, country_poverty, 
+    # by = c("country_code" = "code", "year"))
+
+# Creating my model now
+# How do I clean these names?
+# How do I make the years match up?
+
+carbon_model <- stan_glm(data = indicator_data,
+                         family = gaussian,
+                         formula = co2_emissions_metric_tons_per_capita ~ 
+                           control_of_corruption_estimate + access_to_clean_fuels_and_technologies_for_cooking_percent_of_population,
+                         refresh = 0)
+
+
+
+```
+
