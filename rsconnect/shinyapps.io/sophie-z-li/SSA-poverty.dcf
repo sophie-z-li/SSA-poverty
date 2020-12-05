@@ -5,8 +5,8 @@ account: sophie-z-li
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 3326469
-bundleId: 3924579
+bundleId: 3947653
 url: https://sophie-z-li.shinyapps.io/SSA-poverty/
-when: 1606769923.14979
+when: 1607185931.13904
 asMultiple: FALSE
 asStatic: FALSE

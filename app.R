@@ -33,7 +33,7 @@ world_simple_custom <- wrld_simpl
 
 world_simple_custom@data <- left_join(world_simple_custom@data, finaldata, 
                                       by = c("ISO3" = "code")) %>%
-  clean_names()
+  clean_names() 
 
 
 # Define UI ----
@@ -143,14 +143,53 @@ ui <- fluidPage(
                  
                   ),
         tabPanel("Country-Level Data",
-          fluidRow(
-            column(4,
             h2("Examining Poverty by Country"),
             p("Click on the countries below to see change in poverty"),
-            DTOutput("pov_change")
-          ),
+            tags$style(HTML("
+                    .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_processing, .dataTables_wrapper .dataTables_paginate, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+                    color: #ffffff;
+                    }
+### ADD THIS HERE ###
+                    .dataTables_wrapper .dataTables_paginate .paginate_button{box-sizing:border-box;display:inline-block;min-width:1.5em;padding:0.5em 1em;margin-left:2px;text-align:center;text-decoration:none !important;cursor:pointer;*cursor:hand;color:#ffffff !important;border:1px solid transparent;border-radius:2px}
+
+###To change text and background color of the `Search` box ###
+                    .dataTables_filter input {
+                            color: #0E334A;
+                            background-color: #0E334A
+                           }
+
+                    thead {
+                    color: #ffffff;
+                    }
+
+                     tbody {
+                    color: #000000;
+                     }
+                    
+                    input, button, select, textarea {
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    color: black;
+                    }
+                    
+                    a.paginate_button {
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    color: white;
+                    }
+
+                   "
+                            
+                            
+                            
+            )
+        ),
+            dataTableOutput("pov_change"),
+        br(),
           leafletOutput("SSAmap")
-        )),
+        ),
         tabPanel("High-Frequency Phone Surveys",
                  mainPanel(
                  br(),
@@ -388,18 +427,16 @@ server <- function(input, output) {
         
     })
     
-output$pov_change <- renderDT({
-      datatable(
-        world_simple_custom %>%
-          filter(iso3 %in% c("AGO", "BDI", "BEN", "BFA", "BWA", "CAF", "CIV", 
-                             "CMR", "COD", "COM", "CPV", "ETH", "GAB", "GHA", "GIN", "GMB", "GNB", "KEN",
-                             "LBR", "LSO", "MDG", "MLI", "MOZ", "MRT", "MUS", "MWI", "NAM", "NER", "NGA",
-                             "RWA", "SDN", "SEN", "SLE", "SSD", "STP", "SWZ", "SYC", "TCD", "TGO", "TZA", 
-                             "UGA", "ZAF", "ZMB", "ZWE")) %>%
-          select("Country" = name, "Increase in Poverty" = pov_increase),
-        options = list(pageLength = 10)
-      )
-    })
+output$pov_change <- renderDataTable(world_simple_custom@data %>%
+                                     filter(iso3 %in% c("AGO", "BDI", "BEN", "BFA", "BWA", "CAF", "CIV", 
+                                     "CMR", "COD", "COM", "CPV", "ETH", "GAB", "GHA", "GIN", "GMB", "GNB", "KEN",
+                                     "LBR", "LSO", "MDG", "MLI", "MOZ", "MRT", "MUS", "MWI", "NAM", "NER", "NGA",
+                                     "RWA", "SDN", "SEN", "SLE", "SSD", "STP", "SWZ", "SYC", "TCD", "TGO", "TZA", 
+                                     "UGA", "ZAF", "ZMB", "ZWE")) %>%
+                                     select(name, pov_increase)
+                                       , options = list(
+  pageLength = 5)
+)
     
     # Leaflets
     
@@ -417,13 +454,12 @@ output$pov_change <- renderDT({
                       "<br>",
                       "Increase in Poverty:",
                       world_simple_custom$pov_increase
-                    ),) %>%
+                    )) %>%
         setView(lng = 6.6111, lat = 20.9394, zoom = 3) %>%
         addLegend(
           "bottomright",
           pal = pal,
           values = world_simple_custom$pov_increase,
-          na.label = "",
           title = "% change in poverty, 2019-2020",
           opacity = 1,
           labFormat = labelFormat(digits = 0))

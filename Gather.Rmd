@@ -147,7 +147,6 @@ posterior_predict(pov_model, newdata = new_obs) %>%
 
 finaldata <- read_xlsx("raw_data/finaldata.xlsx", 3) %>%
   mutate(pov_increase = `2020_new` - `2019_new`)
-glimpse(finaldata)
 
 ```
 
@@ -163,6 +162,29 @@ world_simple_custom <- wrld_simpl
 world_simple_custom@data <- left_join(world_simple_custom@data, finaldata, by = c("ISO3" = "code"))
 
  world_simple_custom@data
+ 
+world_simple_custom@polygons <- world_simple_custom@data
+
+# start of base R
+world_simple_custom.sub <- shp[world_simple_custom@data$ISO3 %in% c("AGO", "BDI", "BEN", "BFA", "BWA", "CAF", "CIV", 
+  "CMR", "COD", "COM", "CPV", "ETH", "GAB", "GHA", "GIN", "GMB", "GNB", "KEN",
+  "LBR", "LSO", "MDG", "MLI", "MOZ", "MRT", "MUS", "MWI", "NAM", "NER", "NGA",
+  "RWA", "SDN", "SEN", "SLE", "SSD", "STP", "SWZ", "SYC", "TCD", "TGO", "TZA", 
+  "UGA", "ZAF", "ZMB", "ZWE")] 
+ 
+world_simple_custom.sub <- subset(world_simple_custom@data$ISO3 %in% c("AGO", "BDI", "BEN", "BFA", "BWA", "CAF", "CIV", 
+  "CMR", "COD", "COM", "CPV", "ETH", "GAB", "GHA", "GIN", "GMB", "GNB", "KEN",
+  "LBR", "LSO", "MDG", "MLI", "MOZ", "MRT", "MUS", "MWI", "NAM", "NER", "NGA",
+  "RWA", "SDN", "SEN", "SLE", "SSD", "STP", "SWZ", "SYC", "TCD", "TGO", "TZA", 
+  "UGA", "ZAF", "ZMB", "ZWE"))
+
+# end of base R
+
+ filter(ISO3 %in% c("AGO", "BDI", "BEN", "BFA", "BWA", "CAF", "CIV", 
+  "CMR", "COD", "COM", "CPV", "ETH", "GAB", "GHA", "GIN", "GMB", "GNB", "KEN",
+  "LBR", "LSO", "MDG", "MLI", "MOZ", "MRT", "MUS", "MWI", "NAM", "NER", "NGA",
+  "RWA", "SDN", "SEN", "SLE", "SSD", "STP", "SWZ", "SYC", "TCD", "TGO", "TZA", 
+  "UGA", "ZAF", "ZMB", "ZWE"))
 
 leaflet(world_simple_custom) %>%
   addProviderTiles(providers$CartoDB.Positron) %>%
@@ -173,5 +195,15 @@ leaflet(world_simple_custom) %>%
 world_simple_custom@data %>%
   clean_names()
 
+world_simple_custom@polygons
+
+```
+
+```{r}
+library(shiny)
+renderDataTable(iris, options = list(
+  pageLength = 5,
+  initComplete = I('function(setting, json) { alert("done"); }')
+))
 ```
 
