@@ -12,6 +12,15 @@ library(tidyverse)
 library(janitor)
 library(readxl)
 library(rstanarm)
+library(writexl)
+library(broom.mixed)
+library(ggridges)
+library(gtsummary)
+library(gt)
+library(ggthemes)
+library(leaflet)
+library(maptools)
+
 ```
 
 ```{r}
@@ -34,12 +43,26 @@ indicator_data <- read_csv("raw_data/ESGData.csv", col_types =
   "CMR", "COD", "COM", "CPV", "ETH", "GAB", "GHA", "GIN", "GMB", "GNB", "KEN",
   "LBR", "LSO", "MDG", "MLI", "MOZ", "MRT", "MUS", "MWI", "NAM", "NER", "NGA",
   "RWA", "SDN", "SEN", "SLE", "SSD", "STP", "SWZ", "SYC", "TCD", "TGO", "TZA", 
-  "UGA", "ZAF", "ZMB", "ZWE") & year == 2000:2019) %>%
-  group_by(year) %>%
-  pivot_wider(id_cols = NULL, 
+  "UGA", "ZAF", "ZMB", "ZWE"))
+
+poverty_international <- read_xls("raw_data/poverty_international.xls", 1) %>%
+  clean_names() %>%
+  pivot_longer(cols = x1960:x2020,
+               names_to = "year",
+               values_to = "value") %>%
+  mutate(year = as.double(str_replace(year, "x", ""))) %>%
+  filter(country_code %in% c("AGO", "BDI", "BEN", "BFA", "BWA", "CAF", "CIV", 
+  "CMR", "COD", "COM", "CPV", "ETH", "GAB", "GHA", "GIN", "GMB", "GNB", "KEN",
+  "LBR", "LSO", "MDG", "MLI", "MOZ", "MRT", "MUS", "MWI", "NAM", "NER", "NGA",
+  "RWA", "SDN", "SEN", "SLE", "SSD", "STP", "SWZ", "SYC", "TCD", "TGO", "TZA", 
+  "UGA", "ZAF", "ZMB", "ZWE"))
+
+indicator_data_new <- rbind(indicator_data, poverty_international) %>%
+  pivot_wider(id_cols = c(country_code, year), 
               names_from = indicator_name, 
               values_from = value) %>%
-  clean_names()
+  clean_names() %>%
+  filter(year == 2000:2019)
 
 # Ended up not using the below two lines of indented code because they were not 
 # relevant to my model.
@@ -49,21 +72,106 @@ indicator_data <- read_csv("raw_data/ESGData.csv", col_types =
     # indicator_data_cleaned <- right_join(indicator_data, country_poverty, 
     # by = c("country_code" = "code", "year"))
 
-# Creating my model now
-# How do I clean these names?
-# How do I make the years match up?
+write_csv(indicator_data_new, "indicator.csv")
 
+``` 
 
+```{r}
 
+glimpse(indicator_data_new)
 
 
 ```
 
+
 ```{r}
-carbon_model <- stan_glm(data = indicator_data,
+# have model of all three
+# maybe do 3 separate plots and then have user pick a subset for one column and
+# then do distribution for that
+
+#mutate(X=dplyr::recode(X, 
+#                         `0` = "Bipartisan",
+#                         `1` = "Partisan")) %>%
+# later, reference by "`Bipartisan Party`"
+
+pov_model <- stan_glm(data = indicator_data_new,
                          family = gaussian,
-                         formula = co2_emissions_metric_tons_per_capita ~ 
-                           control_of_corruption_estimate + access_to_clean_fuels_and_technologies_for_cooking_percent_of_population,
-                         refresh = 0)
+                         formula = poverty_headcount_ratio_at_1_90_a_day_2011_ppp_percent_of_population  ~ 
+                           government_effectiveness_estimate +
+                           prevalence_of_undernourishment_percent_of_population +
+                           literacy_rate_adult_total_percent_of_people_ages_15_and_above +gdp_growth_annual_percent +
+                        access_to_electricity_percent_of_population +
+                        gini_index_world_bank_estimate,
+                         refresh = 0) 
+
+print(pov_model, detail = 4)
+```
+
+```{r table}
+
+tbl_regression(pov_model, label = 
+                 list("government_effectiveness_estimate" 
+                      ~ "Government Effectiveness",
+                      "prevalence_of_undernourishment_percent_of_population" 
+                      ~ "Prevalence of Undernourishment",
+                      "literacy_rate_adult_total_percent_of_people_ages_15_and_above" 
+                      ~ "Adult Literacy"), intercept = FALSE) %>%
+  as_gt() %>%
+  tab_header(title = "Regression of Poverty Headcount Ratio at National 
+             Poverty Lines", 
+             subtitle = "The effect of government effectiveness, nourishment, 
+              and adult literacy") %>%
+  tab_source_note(md("Source: https://data.worldbank.org"))
+
+  
+```
+
+```{r}
+
+new_obs <- tibble(government_effectiveness_estimate = c(-1.5, 2.1),
+                  prevalence_of_undernourishment_percent_of_population = c(10, 10),
+                  literacy_rate_adult_total_percent_of_people_ages_15_and_above = c(60, 60))
+
+posterior_predict(pov_model, newdata = new_obs) %>%
+  as_tibble() %>%
+  mutate_all(as.numeric)
+
+# Take user_input and then change the dataset to account for those user inputs.
+
+# maybe only change one value; if one country has really low effectiveness score and another country has good score, but
+# other scores are the same, then the posteriors
+
+```
+
+```{r}
+
+finaldata <- read_xlsx("raw_data/finaldata.xlsx", 3) %>%
+  mutate(pov_increase = `2020_new` - `2019_new`)
+glimpse(finaldata)
+
+```
+
+
+```{r leaflet}
+
+data("wrld_simpl")
+
+# Get my data into that data table; create copy of wrld_simpl
+
+world_simple_custom <- wrld_simpl
+
+world_simple_custom@data <- left_join(world_simple_custom@data, finaldata, by = c("ISO3" = "code"))
+
+ world_simple_custom@data
+
+leaflet(world_simple_custom) %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+   addPolygons(color = "#444444", weight = 1, smoothFactor = 0.5,
+    opacity = 1.0, fillOpacity = 0.2) %>%
+  setView(lng = 6.6111, lat = 20.9394, zoom = 3)
+
+world_simple_custom@data %>%
+  clean_names()
+
 ```
 
