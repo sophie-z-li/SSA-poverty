@@ -101,7 +101,8 @@ pov_model <- stan_glm(data = indicator_data_new,
                            prevalence_of_undernourishment_percent_of_population +
                            literacy_rate_adult_total_percent_of_people_ages_15_and_above +gdp_growth_annual_percent +
                         access_to_electricity_percent_of_population +
-                        gini_index_world_bank_estimate,
+                        gini_index_world_bank_estimate +
+                        ease_of_doing_business_index_1_most_business_friendly_regulations,
                          refresh = 0) 
 
 print(pov_model, detail = 4)

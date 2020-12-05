@@ -6,10 +6,13 @@ library(ggthemes)
 library(readxl)
 library(ggrepel)
 library(gt)
+library(gtsummary)
 library(broom.mixed)
+library(broom)
 library(leaflet)
 library(maptools)
 library(DT)
+library(rstanarm)
 theme_set(theme_bw())
 
 region_poverty <- read_xlsx("raw_data/finaldata.xlsx", 1)
@@ -255,16 +258,47 @@ ui <- fluidPage(
                          h4("Construct the Model:"),
                          selectInput(
                              "varOI_x",
-                             "X variable:",
+                             "X1 variable:",
                              choices = c(
                                  "Government Effectiveness" = "government_effectiveness_estimate",
                                  "Adult Literacy" = "literacy_rate_adult_total_percent_of_people_ages_15_and_above",
                                  "Prevalence of Undernourishment" = "prevalence_of_undernourishment_percent_of_population"
 ),
-multiple = TRUE,
 selected = "government_effectiveness_estimate"
 
 
+),
+
+# Select X2 Variable
+
+selectInput(
+  "varOI_x2",
+  "X2 variable:",
+  choices = c(
+    "Government Effectiveness" = "government_effectiveness_estimate",
+    "Adult Literacy" = "literacy_rate_adult_total_percent_of_people_ages_15_and_above",
+    "Prevalence of Undernourishment" = "prevalence_of_undernourishment_percent_of_population",
+    "None" = "None" 
+  ),
+  selected = "None"
+  
+  
+),
+
+# Select X3 variable
+
+selectInput(
+  "varOI_x3",
+  "X3 variable:",
+  choices = c(
+    "Government Effectiveness" = "government_effectiveness_estimate",
+    "Adult Literacy" = "literacy_rate_adult_total_percent_of_people_ages_15_and_above",
+    "Prevalence of Undernourishment" = "prevalence_of_undernourishment_percent_of_population",
+    "None" = "None" 
+  ),
+  selected = "None"
+  
+  
 ),
 
 # Select Y variable(s) for model.
@@ -276,36 +310,24 @@ selectInput(
         "Poverty Rate at International Poverty Line ($1.90)" = "poverty_headcount_ratio_at_1_90_a_day_2011_ppp_percent_of_population",
         "Poverty Rate at National Poverty Lines" = "poverty_headcount_ratio_at_national_poverty_lines_percent_of_population"),
     selected = "poverty_headcount_ratio_at_1_90_a_day_2011_ppp_percent_of_population"),
-checkboxInput("toggleLinear", label = "Linear Model", value = TRUE),
-checkboxInput("toggleMulti", label = "Multivariate Regression", value = FALSE),
-checkboxInput("toggleMultiinteraction", label = "Multivariate Regression w/ Interaction", value = FALSE),
+
+# Select Model
+
+radioButtons("type", "Model Type:",
+             c("Linear Model" = "toggleLinear",
+               "Multivariate Regression" = "toggleMulti",
+               "Multivariate Regression w/ Interaction" = "toggleMultiinteraction"),
+             selected = "toggleLinear")
+
+# checkboxInput("toggleLinear", label = "Linear Model", value = TRUE),
+# checkboxInput("toggleMulti", label = "Multivariate Regression", value = FALSE),
+# checkboxInput("toggleMultiinteraction", label = "Multivariate Regression w/ Interaction", value = FALSE),
 
 # Dependent variable slider inputs, used to predict the number of
 # water conflict events in a hypothetical basin with the given inputs
 # over a 50 year period.
 
-h4("Predict Poverty:"),
-sliderInput(
-    "government_effectiveness_estimate_pred",
-    "Degree of Government Effectiveness:",
-    min = -2.5,
-    max = 2.5,
-    value = 0.1
 ),
-sliderInput(
-    "literacy_rate_adult_total_percent_of_people_ages_15_and_above_pred",
-    "Adult Literacy (%):",
-    min = 0,
-    max = 100,
-    value = 1
-),
-sliderInput(
-    "prevalence_of_undernourishment_percent_of_population_pred",
-    "Prevalence of Undernourishment (%):",
-    min = 0,
-    max = 100,
-    value = 100
-)),
 
 mainPanel(
     
@@ -317,19 +339,6 @@ mainPanel(
     # Output summary of regression output. I would like to present this in a nicer format over the next 10 days.
     
     gt_output(outputId = "RegSum"),
-    p(
-        "Now, let's take the model above and predict the level of poverty for a 
-        hypothetical country in sub-Saharan Africa
-        with the inputs given at left.
-          Three numbers are provided. 'Fit' is the model's best guess for the 
-        number of conflict events. 'Lwr' and 'upr' provide the range of values 
-        within which we are 95% confident that the true number of conflict 
-        events lies."
-    ),
-    
-    # Output predict() results. 
-    
-    verbatimTextOutput(outputId = "predictSum"),
     
     # Use CSS styling to hide all error messages. This is necessary
     # because the scatterplot displays an error if more than 1 X variable
@@ -347,7 +356,48 @@ mainPanel(
         ),
 
 
-        tabPanel("Posterior Distribution"),
+        tabPanel("Posterior Distribution",
+                 sidebarLayout(
+                   sidebarPanel(
+                     h4("Predict Poverty:"),
+                     sliderInput(
+                       "government_effectiveness_estimate_pred",
+                       "Degree of Government Effectiveness:",
+                       min = -2.5,
+                       max = 2.5,
+                       value = 0
+                     ),
+                     sliderInput(
+                       "literacy_rate_adult_total_percent_of_people_ages_15_and_above_pred",
+                       "Adult Literacy (%):",
+                       min = 0,
+                       max = 100,
+                       value = 0
+                     ),
+                     sliderInput(
+                       "prevalence_of_undernourishment_percent_of_population_pred",
+                       "Prevalence of Undernourishment (%):",
+                       min = 0,
+                       max = 100,
+                       value = 0
+                     )
+                   ),
+                   mainPanel(
+                     p(
+                       "Now, let's take the model above and predict the level of poverty for a 
+        hypothetical country in sub-Saharan Africa
+        with the inputs given at left.
+          Three numbers are provided. 'Fit' is the model's best guess for the 
+        number of conflict events. 'Lwr' and 'upr' provide the range of values 
+        within which we are 95% confident that the true number of conflict 
+        events lies."
+                     ),
+                     
+                     # Output predict() results. 
+                     
+                     plotOutput("predictionplot")
+                   )
+                 )),
         "Other Resources",
         tabPanel("PDF",
                  tags$iframe(style="height:800px; width:100%; scrolling=yes", 
@@ -472,7 +522,8 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
             ggplot(labor, aes(x = poverty_increase, y = working_stop, color = country)) +
                 geom_point() +
                 geom_text(aes(label = country, vjust = 2), size = 3.5, color = "black") +
-                labs(y = "Percentage of Responders Who Reported Having \n Stopped Working Since the COVID-19 Outbreak",
+                labs(y = "Percentage of Responders Who Reported Having \n Stopped 
+                     Working Since the COVID-19 Outbreak",
                      x = "Increase in Poverty (percentage points)") +
                 xlim(0, 5) +
                 ylim(0, 100) +
@@ -482,7 +533,8 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
         }
         else{
             if(input$select_indicator == "income"){
-                ggplot(income, aes(x = poverty_increase, y = decrease_total_income, color = Country)) +
+                ggplot(income, aes(x = poverty_increase, 
+                                   y = decrease_total_income, color = Country)) +
                     geom_point() +
                     geom_text(aes(label = Country, vjust = 2), size = 3.5, color = "black") +
                     labs(y = "Percentage of Responders Who Reported \n a Decrease in Total Income",
@@ -681,7 +733,7 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
                         
                         # Add appropriate trendline, based on user selection. 
                         
-                        if (input$toggleLinear)
+                        if (input$type == "toggleLinear")
                             p <- p + geom_smooth(method = "lm",
                                                  se = TRUE,
                                                  formula = y ~ x)
@@ -692,43 +744,42 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
     # user input, and calculate using the selected X and Y variables.
     
     output$RegSum <- render_gt({
-        if(input$toggleLinear)
+        if(input$type == "toggleLinear")
             pov_model <-
                 stan_glm(data = indicator_data,
                          family = gaussian,
                          formula = paste(input$varOI_y, " ~ ", input$varOI_x),
                          refresh = 0)
         
-        # Figuring out if this math code is suppose to work
+        if (input$type == "toggleMulti") {
+          
+          if(input$varOI_x3 == "None") {
+            pov_model <-
+                stan_glm(data = indicator_data,
+                         family = gaussian,
+                         formula = paste(input$varOI_y, " ~ ", input$varOI_x, "+", input$varOI_x2),
+                         refresh = 0
+                ) }
         
-        if (input$toggleMulti)
-            lmsum <-
-                reactive({
-                    lm(as.formula(paste(
-                        input$varOI_y,
-                        " ~ ",
-                        paste(input$varOI_x, collapse = "+")
-                    )), data = indicator_data)
-                })
+          if(input$varOI_x3 != "None") {
+            pov_model <-
+              stan_glm(data = indicator_data,
+                       family = gaussian,
+                       formula = paste(input$varOI_y, " ~ ", input$varOI_x, "+", input$varOI_x2, "+", input$varOI_x3),
+                       refresh = 0
+              ) }}
         
-        if (input$toggleMultiinteraction)
-            lmsum <-
-                reactive({
-                    lm(as.formula(paste(
-                        input$varOI_y,
-                        " ~ ",
-                        paste(input$varOI_x, collapse = "*")
-                    )), data = indicator_data)
-                })
+        if (input$type == "toggleMultiinteraction")
+          pov_model <-
+            stan_glm(data = indicator_data,
+                     family = gaussian,
+                     formula = paste(input$varOI_y, " ~ ", input$varOI_x, "*", input$varOI_x2),
+                     refresh = 0
+            )
         
         # Print a summary of the model. 
         
-        tbl_regression(pov_model, include = vars(government_effectiveness_estimate,
-                                             literacy_rate_adult_total_percent_of_people_ages_15_and_above,
-                                             prevalence_of_undernourishment_percent_of_population),
-                       label = c(government_effectiveness_estimate ~ "Government Effectiveness Estimate",
-                                 literacy_rate_adult_total_percent_of_people_ages_15_and_above ~ "Adult Literacy Rate",
-                                 prevalence_of_undernourishment_percent_of_population ~ "Prevalence of Undernourishment"), 
+        tbl_regression(pov_model,
                        intercept = FALSE) %>%
           as_gt() %>%
           tab_header(title = "Regression of Poverty Headcount Ratio at National 
@@ -740,33 +791,17 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
     # Generate a predicted number of conflicted events, using the same models
     # constructed above and user inputs of independent variables.
     
-    output$predictSum <- renderPrint({
-        if (input$toggleLinear)
-            lmsum <-
-                reactive({
-                    lm(reformulate(input$varOI_x, input$varOI_y),
-                       data = indicator_data)
-                })
-        
-        
-        if (input$toggleMulti)
-            lmsum <-
-                reactive({
-                    lm(as.formula(paste(
-                        input$varOI_y,
-                        " ~ ",
-                        paste(input$varOI_x, collapse = "+")
-                    )), data = indicator_data)
-                })
-        
-        if (input$toggleMultiinteraction)
-            lmsum <-
-                reactive({
-                    lm(as.formula(paste(
-                        input$varOI_y,
-                        " ~ ",
-                        paste(input$varOI_x, collapse = "*")
-                    )), data = indicator_data)
+    output$predictionplot <- renderPlot({
+
+      new_obs <- tibble(government_effectiveness_estimate = input$government_effectiveness_estimate_pred,
+                        prevalence_of_undernourishment_percent_of_population = input$literacy_rate_adult_total_percent_of_people_ages_15_and_above_pred,
+                        literacy_rate_adult_total_percent_of_people_ages_15_and_above = input$prevalence_of_undernourishment_percent_of_population_pred)
+      
+      posterior_predict(pov_model, newdata = new_obs) %>%
+        as_tibble() %>%
+        mutate_all(as.numeric) %>%
+        ggplot(aes(x = `1`)) +
+        geom_histogram()
                 })
         
         # Set independent variable slider values equal to the input names
@@ -793,9 +828,9 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
         # Print prediction.
         
         print(prediction())
-    })
+    }#)
     
-}
+# }
 
 # Run the app ----
 shinyApp(ui = ui, server = server)
