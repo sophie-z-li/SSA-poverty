@@ -51,8 +51,8 @@ ui <- fluidPage(
                        Sub-Saharan Africa</title>"))),
     
     navlistPanel(
-        "About",
-        tabPanel("Background",
+        "Background",
+        tabPanel("Introduction",
                  br(),
                  HTML('<center><img src="Africa.png" width="400"></center>'),
                  br(),
@@ -319,14 +319,6 @@ radioButtons("type", "Model Type:",
                "Multivariate Regression w/ Interaction" = "toggleMultiinteraction"),
              selected = "toggleLinear")
 
-# checkboxInput("toggleLinear", label = "Linear Model", value = TRUE),
-# checkboxInput("toggleMulti", label = "Multivariate Regression", value = FALSE),
-# checkboxInput("toggleMultiinteraction", label = "Multivariate Regression w/ Interaction", value = FALSE),
-
-# Dependent variable slider inputs, used to predict the number of
-# water conflict events in a hypothetical basin with the given inputs
-# over a 50 year period.
-
 ),
 
 mainPanel(
@@ -356,49 +348,30 @@ mainPanel(
         ),
 
 
-        tabPanel("Posterior Distribution",
-                 sidebarLayout(
-                   sidebarPanel(
-                     h4("Predict Poverty:"),
-                     sliderInput(
-                       "government_effectiveness_estimate_pred",
-                       "Degree of Government Effectiveness:",
-                       min = -2.5,
-                       max = 2.5,
-                       value = 0
-                     ),
-                     sliderInput(
-                       "literacy_rate_adult_total_percent_of_people_ages_15_and_above_pred",
-                       "Adult Literacy (%):",
-                       min = 0,
-                       max = 100,
-                       value = 0
-                     ),
-                     sliderInput(
-                       "prevalence_of_undernourishment_percent_of_population_pred",
-                       "Prevalence of Undernourishment (%):",
-                       min = 0,
-                       max = 100,
-                       value = 0
-                     )
-                   ),
-                   mainPanel(
-                     p(
-                       "Now, let's take the model above and predict the level of poverty for a 
-        hypothetical country in sub-Saharan Africa
-        with the inputs given at left.
-          Three numbers are provided. 'Fit' is the model's best guess for the 
-        number of conflict events. 'Lwr' and 'upr' provide the range of values 
-        within which we are 95% confident that the true number of conflict 
-        events lies."
-                     ),
-                     
-                     # Output predict() results. 
-                     
-                     plotOutput("predictionplot")
-                   )
-                 )),
         "Other Resources",
+tabPanel("Introduction",
+         br(),
+         HTML('<center><img src="worldbank.jpg" width="400"></center>'),
+         br(),
+         br(),
+         h3("About Me"),
+         p("My name is Sophie, and I am a junior at Harvard College
+                   studying Philosophy. As a native Houstonian, I love all
+                   things barbeque and am the proud owner of two miniature
+                   cacti. You can find the link to my Github", 
+           a("here", href ="https://github.com/sophie-z-li")),
+         br(),
+         h3("About this Project"),
+         p("For my final project, I partnered with the
+                   World Bank Group's Global Poverty and Equity Practice to analyze
+                   COVID-19's impact on poverty in the sub-Saharan Africa
+                   region."),
+         p("This dashboard updates", a("previously published estimates", 
+                                       href = "https://openknowledge.worldbank.org/handle/10986/33765"),"
+                   of COVID-19’s effect on poverty levels in Sub-Saharan Africa 
+                   (SSA), using GDP growth projections from the October 2020 
+                   World Economic Outlook (WEO) database. Prior
+                   projections were created based on April 2020 WEO numbers.")),
         tabPanel("PDF",
                  tags$iframe(style="height:800px; width:100%; scrolling=yes", 
                              src="SSA_note_draft.pdf"))
@@ -713,7 +686,7 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
             geom_point() +
             theme_classic() +
             geom_jitter() +
-            labs(title = "Predicting Poverty",
+            labs(title = "Scatterplot depicting relationship between X1 and Y variables",
                  caption = "Sources: World Bank Group")
         
         # Add appropriate axis labels based on variables selected.
@@ -782,55 +755,12 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
         tbl_regression(pov_model,
                        intercept = FALSE) %>%
           as_gt() %>%
-          tab_header(title = "Regression of Poverty Headcount Ratio at National 
-             Poverty Lines") %>%
+          tab_header(title = "Regression of Selected Y Variable") %>%
           tab_source_note(md("Source: https://data.worldbank.org"))
         
     })
     
-    # Generate a predicted number of conflicted events, using the same models
-    # constructed above and user inputs of independent variables.
-    
-    output$predictionplot <- renderPlot({
-
-      new_obs <- tibble(government_effectiveness_estimate = input$government_effectiveness_estimate_pred,
-                        prevalence_of_undernourishment_percent_of_population = input$literacy_rate_adult_total_percent_of_people_ages_15_and_above_pred,
-                        literacy_rate_adult_total_percent_of_people_ages_15_and_above = input$prevalence_of_undernourishment_percent_of_population_pred)
-      
-      posterior_predict(pov_model, newdata = new_obs) %>%
-        as_tibble() %>%
-        mutate_all(as.numeric) %>%
-        ggplot(aes(x = `1`)) +
-        geom_histogram()
-                })
-        
-        # Set independent variable slider values equal to the input names
-        # required by the above models. Note that the slider names could not be
-        # the same as the input names, or else Shiny threw an error.
-        
-        sliderValues <- reactive({
-            data.frame(
-                government_effectiveness_estimate = input$government_effectiveness_estimate_pred,
-                literacy_rate_adult_total_percent_of_people_ages_15_and_above = input$literacy_rate_adult_total_percent_of_people_ages_15_and_above_pred,
-                prevalence_of_undernourishment_percent_of_population = input$prevalence_of_undernourishment_percent_of_population_pred
-
-            )
-        })
-        
-        # Generate prediction, with a 95% confidence interval. 
-        
-        prediction <- reactive({
-            predict(lmsum(),
-                    newdata = sliderValues(),
-                    interval = "confidence")
-        })
-        
-        # Print prediction.
-        
-        print(prediction())
-    }#)
-    
-# }
+}
 
 # Run the app ----
 shinyApp(ui = ui, server = server)
