@@ -24,7 +24,18 @@ income <- read_xlsx("raw_data/ssa_hfs.xlsx", 2)
 food <- read_xlsx("raw_data/ssa_hfs.xlsx", 3)
 education <- read_xlsx("raw_data/ssa_hfs.xlsx", 4)
 
-indicator_data <- read_csv("raw_data/indicator.csv")
+indicator_data <- read_csv("raw_data/indicator.csv", col_types = cols(
+ .default = col_double(),
+ country_code = col_character(),
+ cooling_degree_days_projected_change_in_number_of_degree_celsius = 
+   col_logical(),
+ heat_index_35_projected_change_in_days = col_logical(),
+ maximum_5_day_rainfall_25_year_return_level_projected_change_in_mm = 
+   col_logical(),
+ mean_drought_index_projected_change_unitless = col_logical(),
+ people_using_safely_managed_sanitation_services_percent_of_population = 
+   col_logical()
+                             ))
 
 finaldata <- read_xlsx("raw_data/finaldata.xlsx", 3) %>%
   mutate(pov_increase = `2020_new` - `2019_new`,
@@ -36,7 +47,8 @@ population <- read_xls("raw_data/population.xls", 1) %>%
   select(country_code, x2019) %>%
   rename(population = x2019)
 
-finaldata <- left_join(finaldata, population, by = c("code" = "country_code")) %>%
+finaldata <- left_join(finaldata, population, 
+                       by = c("code" = "country_code")) %>%
   mutate(new_poor = pov_increase*population)
 
 # Loading leaflet data
@@ -55,9 +67,9 @@ ui <- fluidPage(
     theme = shinytheme("flatly"),
     
     titlePanel(
-        h1("Analyzing COVID-19's Impact on Poverty in Sub-Saharan Africa", 
+        h1("COVID-19's Impact on Poverty in Sub-Saharan Africa", 
            align = "center"),
-        tags$head(HTML("<title>Analyzing COVID-19's Impact on Poverty in 
+        tags$head(HTML("<title>COVID-19's Impact on Poverty in 
                        Sub-Saharan Africa</title>"))),
     
     navlistPanel(
@@ -67,32 +79,34 @@ ui <- fluidPage(
                  HTML('<center><img src="Africa.png" width="400"></center>'),
                  br(),
                  br(),
-                 h3("How much will poverty rise in Sub-Saharan Africa in 2020?"),
-                 p("Since its initial outbreak, the COVID-19 pandemic has brought about 
-                 a sharp reduction in global economy activity. For Sub-Saharan 
-                 Africa (SSA), daily infections rates have declined since 
-                 mid-July, although recently, there has been a small spike in 
-                 new cases as countries continue to conduct more testing. While 
-                 the officially reported infections in SSA remain relatively 
-                 low compared to other regions, the data may be misleading given
-                 that testing capacity is limited in many countries, and we may 
-                 still be in the intermediate stages of the pandemic in the 
-                 region. Areas with weak healthcare infrastructure could easily
-                 be overwhelmed by a rapidly expanding pandemic, the effects of 
-                 which will be aggravated by the global economic downturn as 
-                 well as government-mandated lockdowns in the region."),
+                 h3("How much will poverty rise in Sub-Saharan Africa in 
+                    2020?"),
+                 p("Since its initial outbreak, the COVID-19 pandemic has 
+                 brought about a sharp reduction in global economy activity. 
+                 For Sub-Saharan Africa (SSA), daily infections rates have 
+                 declined since mid-July, although recently, there has been a 
+                 small spike in new cases as countries continue to conduct more 
+                 testing. While the officially reported infections in SSA remain 
+                 relatively low compared to other regions, the data may be 
+                 misleading given that testing capacity is limited in many 
+                 countries, and we may still be in the intermediate stages of 
+                 the pandemic in the region. Areas with weak healthcare 
+                 infrastructure could easily be overwhelmed by a rapidly 
+                 expanding pandemic, the effects of which will be aggravated by
+                 the global economic downturn as well as government-mandated
+                 lockdowns in the region."),
                  h3("The Analysis"),
                  p("This dashboard presents estimates of the increase in poverty
                  and as an update from a", a("previous World Bank note", 
-                 href = "https://openknowledge.worldbank.org/handle/10986/33765")," 
-                 which was 
-                 published in May 2020. Updated estimates based on the October 
-                 2020 World Economic Outlook vintage suggest that COVID-19 will
-                 have a more severe impact on poverty rates than originally 
-                 projected. Additionally, data from high-frequency phone surveys
-                 indicate that the pandemic has created severe disturbances in
-                 the labor market, household income, food security, and 
-                 educational attainment within the region.")),
+             href = "https://openknowledge.worldbank.org/handle/10986/33765")," 
+                 which was published in May 2020. Updated estimates based on 
+                 the October 2020 World Economic Outlook vintage suggest that 
+                 COVID-19 will have a more severe impact on poverty rates 
+                 than originally projected. Additionally, data from 
+                 high-frequency phone surveys indicate that the pandemic 
+                 has created severe disturbances in the labor market, 
+                 household income, food security, and educational attainment
+                 within the region.")),
         tabPanel("Methodology",
                  br(),
                  HTML('<center><img src="worldbank.jpg" width="400"></center>'),
@@ -112,17 +126,19 @@ ui <- fluidPage(
                  World Economic Outlook (WEO). In this case, it was the October
                  2019 and October 2020 vintages. We then simulated the change
                  in poverty rates by adjusting the welfare of households from a
-                 database of household surveys, forecasting the welfare aggregate
-                 of each country by the growth of the GDP per capita assuming a
-                 “distributionally neutral” impact in welfare. The difference in
-                 lined-up poverty rates between the two vintages is a rough 
-                 estimate of the effect of the crisis on poverty. For more 
-                 information, please refer to", a("the May 2020 note.", 
-                 href = "https://openknowledge.worldbank.org/handle/10986/33765")),
+                 database of household surveys, forecasting the welfare 
+                 aggregate of each country by the growth of the GDP per capita
+                 assuming a “distributionally neutral” impact in welfare. 
+                 The difference in lined-up poverty rates between the two 
+                 vintages is an approximate estimate of the effect of the 
+                 crisis on poverty. For more information, please refer to", 
+                 a("the May 2020 note.", 
+              href = "https://openknowledge.worldbank.org/handle/10986/33765")),
                  h3("Poverty Projections"),
                  p("This dashboard utilizes three different poverty projections.
                    The first two are POVCAL estimates, which are calculated
-                   using the above methology. The baseline POVCAL estimate depicts
+                   using the above methology. The baseline POVCAL estimate 
+                   depicts
                    pre-COVID poverty projections based on
                    the October 2019 WEO vintage. The new POVCAL estimate depicts
                    the updated poverty projections post-outbreak. using the
@@ -136,22 +152,23 @@ ui <- fluidPage(
                  the magnitude of the impact in welfare aggregate depends on 
                  the welfare and GDP per capita elasticity chosen by the poverty
                  economist in charge of each country."),
-                 p("*Unless MPO is specifically stated, mentions of poverty
+                 tags$i("*Unless MPO is specifically stated, mentions of poverty
                    projections in this dashboard to poverty projections will
                    be in reference to POVCAL estimates (in accordance with World
                    Bank practices.)"),
-                 p("**While I gathered the above inputs, ultimately, the
+                 p(tags$i("**While I gathered the above inputs, ultimately, the
                    finalized do-file was run by my project supervisor, Jose
-                   Montes, due to my not having possession of certain proprietary
-                   data.")
+                   Montes, due to my not having possession of certain 
+                   proprietary data."))
                  ),
         "Data",
         tabPanel("Country-Level Data",
             h3("Examining Poverty by Country"),
-            p("Click on a country below to see the change in poverty
-              rate (POVCAL estimates)."),
+            p("Below is an interactive map. Click on a country in the SSA region
+            to explore."),
             leafletOutput("SSAmap"),
-            tags$style(type="text/css", "div.info.legend.leaflet-control br {clear: both;}"),
+            tags$style(type="text/css", "div.info.legend.leaflet-control br 
+                       {clear: both;}"),
         br(),
         dataTableOutput("pov_change")
         ),
@@ -161,18 +178,21 @@ ui <- fluidPage(
                    p("This interactive feature allows you to visualize changes
                    in poverty over time in different SSA regions. In the 
                    drop-down menu below, select the region of interest."),
-                   p("The Eastern/Central region (AFE) includes Angola, Botswana, 
+                   p("The", tags$b("Eastern/Central region (AFE)"), "includes 
+                   Angola, Botswana, 
                    Burundi, Comoros, the Democratic Republic of the Congo, 
                    Eswantini, Ethiopia, Kenya, Lesotho, Madagascar, Malawi, 
-                   Mauritius, Mozambique, Namibia, Rwanda, São Tomé and Príncipe,
-                  Seychelles, South Africa, South Sudan, Sudan, Tanzania,
-                   Uganda, Zambia, and Zimbabwe."),
-                   p("The Western/Southern region (AFW) includes Benin, Burkina Faso,
+                   Mauritius, Mozambique, Namibia, Rwanda, São Tomé and 
+                   Príncipe, Seychelles, South Africa, South Sudan, Sudan,
+                   Tanzania, Uganda, Zambia, and Zimbabwe."),
+                   p("The", tags$b("Western/Southern region (AFW)"), "includes 
+                   Benin, Burkina Faso,
                    Cameroon, Cabo Verde, Central African Republic, Chad, Côte
                    d'Ivoire, Gabon, Ghana, Guinea, Guinea-Bissau, Liberia, Mali,
                    Mauritania, Niger, Nigeria, Republic of Congo, Senegal,
                    Sierra Leone, The Gambia, and Togo."),
                    br()),
+                 
                  mainPanel(
                    selectInput("select_region",
                                "Select Region",
@@ -203,12 +223,13 @@ ui <- fluidPage(
                    pandemic."),
                    br(),
                    br())),
+        
         tabPanel("High-Frequency Phone Surveys",
                  mainPanel(
                  h3("COVID-19 High Frequency Monitoring"),
                  p("The following data was pulled from the World Bank's",
                  a("COVID-19 High-Frequency Monitoring", 
-                 href = "https://openknowledge.worldbank.org/handle/10986/33765"),
+               href = "https://openknowledge.worldbank.org/handle/10986/33765"),
                  "beta. Preliminary data from high-frequency 
                    phone surveys indicate major disruptions to labor markets, 
                    household income, food security, and educational attainment 
@@ -224,105 +245,58 @@ ui <- fluidPage(
                  br(),
                  textOutput("PlotsIndicatorText"),
                  br())),
+        
         tabPanel("Model",
                  h3("Predicting Poverty"),
                  p(
-                     "This project's dataset was taken from the World Bank. The
-                     variables below were derived from the Environment and
-                     Social Government database. Below are the definitions for
-                     all available covariates (quoted directly from the World
-                     Bank."
+                     "The variables below were taken from the World Bank's 
+                     Environment and Social Government database. Below, you
+                     can construct a predictive model regressing poverty at 
+                     either national poverty lines or the international
+                     poverty line, using up to three covariates with/without
+                     interaction terms. For further information on the 
+                     variables, you may consult the", tags$b("Glossary"), "on 
+                     the leftside pane, which provides definitions directly 
+                     from the World Bank."
                  ),
-                 tags$ul(
-                     tags$li(
-                       tags$b("Access to Electricity (%)"), 
-                       "is the percentage of a country's population with access 
-                       to electricity. Electrification data are collected from 
-                       industry, national surveys and international sources.)."
-                     ),
-                     tags$li(
-                     tags$b("Adult Literacy Rate (%)"), 
-                     "is the percentage of people ages 15 and above who can 
-                         both read and write with understanding a short simple 
-                         statement about their everyday life."
-                   ),
-                   tags$li(
-                     tags$b("Annual GDP Growth"), 
-                     "refers to the annual percentage growth rate of GDP at 
-                     market prices based on constant local currency. Aggregates
-                     are based on constant 2010 U.S. dollars. GDP is the sum of
-                     gross value added by all resident producers in the economy
-                     plus any product taxes and minus any subsidies not included
-                     in the value of the products. It is calculated without 
-                     making deductions for depreciation of fabricated assets 
-                     or for depletion and degradation of natural resources."
-                   ),
-                   tags$li(
-                     tags$b("Child Employment"), 
-                     "refers to the percentage of children between the ages of
-                     7 and 14 who work."
-                   ),
-                   tags$li(
-                     tags$b("Gini Index"), 
-                     "measures inequality, specifically, the extent to which 
-                     the distribution of income (or, in some cases, consumption
-                     expenditure) among individuals or households within an 
-                     economy deviates from a perfectly equal distribution."
-                   ),
-                   tags$li(
-                     tags$b("Government Effectiveness Estimate"), "captures 
-                     perceptions of the quality of public services, the 
-                     quality of the civil service and the degree of its 
-                     independence from political pressures, the quality of 
-                     policy formulation and implementation, and the 
-                     credibility of the government's commitment to such 
-                     policies. Estimate gives the country's score on the 
-                     aggregate indicator, in units of a standard normal 
-                     distribution, i.e. ranging from approximately -2.5 to 2.5."
-                     ),
-                   tags$li(
-                     tags$b("Life Expectancy at Birth"), 
-                     "refers to the number of years a newborn infant would live 
-                     if prevailing patterns of mortality at the time of its 
-                     birth were to stay the same throughout its life."
-                   ),
-                   tags$li(
-                     tags$b("Prevalence of Undernourishment (as % of 
-                     population)"), "refers to Population below minimum level
-                     of dietary energy consumption (also referred to as 
-                     prevalence of undernourishment) shows the percentage 
-                     of the population whose food intake is insufficient to 
-                     meet dietary energy requirements continuously. Data 
-                     showing as 5 may signify a prevalence of 
-                     undernourishment below 5%. (source: World Bank)."),
-                   tags$li(
-                     tags$b("Primary School Enrollment (% net)"), 
-                     "refers to the ratio of children of official school age 
-                     who are enrolled in school to the population of the 
-                     corresponding official school age."
-                   )),
-                 p(
-                     "blah, blah, blah, say something cool about this model"
-                 ),
+                 br(),
                  sidebarLayout(
                      sidebarPanel(
-                         h4("Construct the Model:"),
+                       selectInput("select_definition",
+                                   "Glossary",
+                                   c("Access to Electricity" = "electricity", 
+                                     "Adult Literacy Rate" = "literacy", 
+                                     "Annual GDP Growth" = "gdp",
+                                     "Child Employment" = "child",
+                                     "Gini Index" = "gini", 
+                                     "Government Effectiveness Estimate" = 
+                                       "goveff",
+                                     "Life Expectancy at Birth" = "life",
+                                     "Prevalence of Undernourishment" = 
+                                       "nourishment",
+                                     "Primary School Enrollment" = "school")),
+                       
+                       textOutput("VariableDefinition"),
+                       br(),
                          selectInput(
                              "varOI_x",
                              "X1 variable:",
-                             choices = c(
-                                 "Access to Electricity" = "access_to_electricity_percent_of_population",
-                                 "Adult Literacy" = "literacy_rate_adult_total_percent_of_people_ages_15_and_above",
-                                 "Annual GDP Growth" = "gdp_growth_annual_percent",
-                                 "Child Employment" = "children_in_employment_total_percent_of_children_ages_7_14",
-                                 "Gini Index" ="gini_index_world_bank_estimate",
-                                 "Government Effectiveness" = "government_effectiveness_estimate",
-                                 "Life Expectancy at Birth" = "life_expectancy_at_birth_total_years",
-                                 "Prevalence of Undernourishment" = "prevalence_of_undernourishment_percent_of_population",
-                                 "Primary School Enrollment" = "school_enrollment_primary_percent_gross"
+       choices = c(
+        "Access to Electricity" = "access_to_electricity_percent_of_population",
+        "Adult Literacy" = 
+          "literacy_rate_adult_total_percent_of_people_ages_15_and_above",
+        "Annual GDP Growth" = 
+          "gdp_growth_annual_percent",
+        "Child Employment" = 
+          "children_in_employment_total_percent_of_children_ages_7_14",
+        "Gini Index" ="gini_index_world_bank_estimate",
+        "Government Effectiveness" = "government_effectiveness_estimate",
+        "Life Expectancy at Birth" = "life_expectancy_at_birth_total_years",
+        "Prevalence of Undernourishment" = 
+          "prevalence_of_undernourishment_percent_of_population",
+        "Primary School Enrollment" = "school_enrollment_primary_percent_gross"
 ),
 selected = "government_effectiveness_estimate"
-
 
 ),
 
@@ -333,13 +307,16 @@ selectInput(
   "X2 variable:",
   choices = c(
     "Access to Electricity" = "access_to_electricity_percent_of_population",
-    "Adult Literacy" = "literacy_rate_adult_total_percent_of_people_ages_15_and_above",
+    "Adult Literacy" = 
+      "literacy_rate_adult_total_percent_of_people_ages_15_and_above",
     "Annual GDP Growth" = "gdp_growth_annual_percent",
-    "Child Employment" = "children_in_employment_total_percent_of_children_ages_7_14",
+    "Child Employment" = 
+      "children_in_employment_total_percent_of_children_ages_7_14",
     "Gini Index" ="gini_index_world_bank_estimate",
     "Government Effectiveness" = "government_effectiveness_estimate",
     "Life Expectancy at Birth" = "life_expectancy_at_birth_total_years",
-    "Prevalence of Undernourishment" = "prevalence_of_undernourishment_percent_of_population",
+    "Prevalence of Undernourishment" = 
+      "prevalence_of_undernourishment_percent_of_population",
     "Primary School Enrollment" = "school_enrollment_primary_percent_gross",
     "None" = "None" 
   ),
@@ -355,13 +332,16 @@ selectInput(
   "X3 variable:",
   choices = c(
     "Access to Electricity" = "access_to_electricity_percent_of_population",
-    "Adult Literacy" = "literacy_rate_adult_total_percent_of_people_ages_15_and_above",
+    "Adult Literacy" = 
+      "literacy_rate_adult_total_percent_of_people_ages_15_and_above",
     "Annual GDP Growth" = "gdp_growth_annual_percent",
-    "Child Employment" = "children_in_employment_total_percent_of_children_ages_7_14",
+    "Child Employment" =
+      "children_in_employment_total_percent_of_children_ages_7_14",
     "Gini Index" ="gini_index_world_bank_estimate",
     "Government Effectiveness" = "government_effectiveness_estimate",
     "Life Expectancy at Birth" = "life_expectancy_at_birth_total_years",
-    "Prevalence of Undernourishment" = "prevalence_of_undernourishment_percent_of_population",
+    "Prevalence of Undernourishment" = 
+      "prevalence_of_undernourishment_percent_of_population",
     "Primary School Enrollment" = "school_enrollment_primary_percent_gross",
     "None" = "None" 
   ),
@@ -376,17 +356,22 @@ selectInput(
     "varOI_y",
     "Y variable:",
     choices = c(
-        "Poverty Rate at International Poverty Line ($1.90)" = "poverty_headcount_ratio_at_1_90_a_day_2011_ppp_percent_of_population",
-        "Poverty Rate at National Poverty Lines" = "poverty_headcount_ratio_at_national_poverty_lines_percent_of_population"),
-    selected = "poverty_headcount_ratio_at_1_90_a_day_2011_ppp_percent_of_population"),
+      "Poverty Rate at National Poverty Lines" = 
+      "poverty_headcount_ratio_at_national_poverty_lines_percent_of_population",
+      "Poverty Rate at International Poverty Line ($1.90)" = 
+      "poverty_headcount_ratio_at_1_90_a_day_2011_ppp_percent_of_population"),
+    selected = 
+     "poverty_headcount_ratio_at_national_poverty_lines_percent_of_population"),
 
 # Select Model
 
 radioButtons("type", "Model Type:",
              c("Linear Model" = "toggleLinear",
                "Multivariate Regression" = "toggleMulti",
-               "Multivariate Regression w/ X1 & X2 Interaction" = "toggleMultiinteraction",
-               "Multivariate Regression w/ X1, X2 & X3 Interaction" = "toggleMultiinteraction3"),
+               "Multivariate Regression w/ X1 & X2 Interaction" = 
+                 "toggleMultiinteraction",
+               "Multivariate Regression w/ X1, X2 & X3 Interaction" = 
+                 "toggleMultiinteraction3"),
              selected = "toggleLinear")
 
 ),
@@ -398,7 +383,7 @@ mainPanel(
     plotOutput("poverty_regression", height = 500),
     br(),
     
-    # Output summary of regression output. I would like to present this in a nicer format over the next 10 days.
+    # Output summary of regression output.
     
     gt_output(outputId = "RegSum"),
     
@@ -412,28 +397,33 @@ mainPanel(
         ),
 
 
-        "Other Resources",
+        "Others",
 tabPanel("About",
+         HTML('<center><img src="headshot.jpg", height = "30%", 
+              width="30%"></center>'),
          br(),
-         br(),
-         h3("About Me"),
-         p("My name is Sophie, and I am a junior at Harvard College
-                   studying Philosophy. As a native Houstonian, I love all
-                   things barbeque and am the proud owner of two miniature
-                   cacti. You can find the link to my Github", 
-           a("here", href ="https://github.com/sophie-z-li")),
-         br(),
+           h3("About Me"),
+           p("My name is Sophie, and I am a junior at Harvard College
+           studying Philosophy. As a native Houstonian, I love all
+           things barbeque and am the proud owner of two miniature
+           cacti. You can find the link to my Github", 
+             a("here", href ="https://github.com/sophie-z-li")),
          h3("About this Project"),
          p("For my final project, I partnered with the
-                   World Bank Group's Global Poverty and Equity Practice to analyze
-                   COVID-19's impact on poverty in the sub-Saharan Africa
-                   region."),
+           World Bank Group's Global Poverty and Equity Practice to analyze
+           COVID-19's impact on poverty in the sub-Saharan Africa region."),
          p("This dashboard updates", a("previously published estimates", 
-                                       href = "https://openknowledge.worldbank.org/handle/10986/33765"),"
-                   of COVID-19’s effect on poverty levels in Sub-Saharan Africa 
-                   (SSA), using GDP growth projections from the October 2020 
-                   World Economic Outlook (WEO) database. Prior
-                   projections were created based on April 2020 WEO numbers.")),
+           href = "https://openknowledge.worldbank.org/handle/10986/33765"),"
+           of COVID-19’s effect on poverty levels in Sub-Saharan Africa 
+           (SSA), using GDP growth projections from the October 2020 
+           World Economic Outlook (WEO) database. Prior
+           projections were created based on April 2020 WEO numbers. In total,
+           this project used data from both the WEO as well as a variety of
+           World Bank datasets, including the Environment and Social Governance
+           database (ESG), World Development Indicators, World Population, 
+           COVID-19 High-Frequency Phone Survey results, Macro-Poverty Outlooks,
+           as well as proprietary bank data."),
+         br(),),
         tabPanel("PDF",
                  tags$iframe(style="height:800px; width:100%; scrolling=yes", 
                              src="SSA_note_draft.pdf"))
@@ -459,10 +449,13 @@ server <- function(input, output) {
                  x = "Year",
                  y = "Poverty Rate (%)") + 
             ylim(32, 48) +
-            scale_color_discrete(name = "Estimates",
-                                labels = c("Pre-Pandemic", 
-                                           "Post-Pandemic (POVCAL)", 
-                                           "Post-Pandemic (MPO)")) +
+            scale_color_manual(values = 
+                                 c("darkgreen", "darkorange2", "royalblue3"),
+                               name = "Estimates",
+                               breaks = c("baseline", "new", "mpo"),
+                               labels = c("Pre-Pandemic", 
+                                          "Post-Pandemic (POVCAL)", 
+                                          "Post-Pandemic (MPO)")) +
             theme_bw() +
             theme(plot.title = element_text(hjust = 0.5))
         }
@@ -481,10 +474,13 @@ server <- function(input, output) {
                          x = "Year",
                          y = "Poverty Rate (%)") + 
                     ylim(32, 48) +
-                    scale_color_discrete(name = "Estimates",
-                                         labels = c("Pre-Pandemic", 
-                                                    "Post-Pandemic (POVCAL)", 
-                                                    "Post-Pandemic (MPO)")) +
+                    scale_color_manual(values = 
+                                   c("darkgreen", "darkorange2", "royalblue3"),
+                                   name = "Estimates",
+                                   breaks = c("baseline", "new", "mpo"),
+                                   labels = c("Pre-Pandemic", 
+                                              "Post-Pandemic (POVCAL)", 
+                                              "Post-Pandemic (MPO)")) +
                     theme_bw() +
                     theme(plot.title = element_text(hjust = 0.5))    
             }
@@ -495,19 +491,24 @@ server <- function(input, output) {
                     filter(year >= 2010) %>%
                     filter(region == input$select_region) %>%
                     mutate(poverty = round(poverty, 1)) %>%
-                    ggplot(aes(x = year, y = poverty, color = type, label = poverty)) +
+                    ggplot(aes(x = year, y = poverty, 
+                               color = type, label = poverty)) +
                     geom_line(size = 1) +
                     geom_point(size = 2) +
                     geom_text_repel(aes(label = poverty), size = 3.5, 
                           color = "black", segment.color = "transparent") +
-                    labs(title = "Changes in Poverty in Western/Southern Africa",
+                    labs(title = 
+                           "Changes in Poverty in Western/Southern Africa",
                          x = "Year",
                          y = "Poverty Rate (%)") + 
                     ylim(32, 48) +
-                    scale_color_discrete(name = "Estimates",
-                                         labels = c("Pre-Pandemic", 
-                                                    "Post-Pandemic (POVCAL)", 
-                                                    "Post-Pandemic (MPO)")) +
+                    scale_color_manual(values = 
+                                   c("darkgreen", "darkorange2", "royalblue3"),
+                                   name = "Estimates",
+                                   breaks = c("baseline", "new", "mpo"),
+                                   labels = c("Pre-Pandemic", 
+                                              "Post-Pandemic (POVCAL)", 
+                                              "Post-Pandemic (MPO)")) +
                     theme_bw() +
                     theme(plot.title = element_text(hjust = 0.5))
             }
@@ -516,17 +517,25 @@ server <- function(input, output) {
     })
     
 output$pov_change <- renderDataTable(world_simple_custom@data %>%
-                                     filter(iso3 %in% c("AGO", "BDI", "BEN", "BFA", "BWA", "CAF", "CIV", 
-                                     "CMR", "COD", "COM", "CPV", "ETH", "GAB", "GHA", "GIN", "GMB", "GNB", "KEN",
-                                     "LBR", "LSO", "MDG", "MLI", "MOZ", "MRT", "MUS", "MWI", "NAM", "NER", "NGA",
-                                     "RWA", "SDN", "SEN", "SLE", "SSD", "STP", "SWZ", "SYC", "TCD", "TGO", "TZA", 
+                                     filter(iso3 %in% c("AGO", "BDI", "BEN", 
+                                     "BFA", "BWA", "CAF", "CIV", 
+                                     "CMR", "COD", "COM", "CPV", "ETH", "GAB", 
+                                     "GHA", "GIN", "GMB", "GNB", "KEN",
+                                     "LBR", "LSO", "MDG", "MLI", "MOZ", "MRT", 
+                                     "MUS", "MWI", "NAM", "NER", "NGA",
+                                     "RWA", "SDN", "SEN", "SLE", "SSD", "STP", 
+                                     "SWZ", "SYC", "TCD", "TGO", "TZA", 
                                      "UGA", "ZAF", "ZMB", "ZWE")) %>%
-                                     select(name, population, pov_increase, new_poor) %>%
-                                     mutate(pov_increase = round(pov_increase, 2)) %>%
+                                     select(name, 
+                                            population, 
+                                            pov_increase, 
+                                            new_poor) %>%
+                                     mutate(pov_increase = 
+                                              round(pov_increase, 2)) %>%
                                      mutate(new_poor = round(new_poor, 0)),
-                                     # formatCurrency(c("population"),currency = "", interval = 3, mark = ","),
                                      colnames = c("Country", "Population", 
-                                     "Poverty Increase % (POVCAL)", "Estimated # of New Poor"),
+                                     "Poverty Increase % (POVCAL)", 
+                                     "Estimated # of New Poor"),
                                      options = list(
   pageLength = 10)
 )
@@ -565,58 +574,69 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
     
     output$PlotsIndicator <- renderPlot({
         if(input$select_indicator == "labor") {
-            ggplot(labor, aes(x = poverty_increase, y = working_stop, color = country)) +
+            ggplot(labor, aes(y = poverty_increase, x = working_stop, 
+                              color = country)) +
                 geom_point() +
-                geom_text(aes(label = country, vjust = 2), size = 3.5, color = "black") +
-                labs(y = "Percentage of Responders Who Reported Having \n Stopped 
-                     Working Since the COVID-19 Outbreak",
-                     x = "Increase in Poverty (percentage points)") +
-                xlim(0, 5) +
-                ylim(0, 100) +
+                geom_text_repel(aes(label = country, vjust = 2), 
+                          size = 3.5, color = "black", 
+                          segment.color = "transparent") +
+                labs(x = "% of Responders Who Reported Having Stopped Working Since the COVID-19 Outbreak",
+                     y = "Increase in Poverty (%)") +
                 scale_color_discrete("Country") +
+                xlim(0, 100) +
+                ylim(0, 5) +
                 theme_bw() +
                 theme(legend.position = "none")
         }
         else{
             if(input$select_indicator == "income"){
-                ggplot(income, aes(x = poverty_increase, 
-                                   y = decrease_total_income, color = Country)) +
+                ggplot(income, aes(y = poverty_increase, 
+                                   x = decrease_total_income, 
+                                   color = Country)) +
                     geom_point() +
-                    geom_text(aes(label = Country, vjust = 2), size = 3.5, color = "black") +
-                    labs(y = "Percentage of Responders Who Reported \n a Decrease in Total Income",
-                         x = "Increase in Poverty (percentage points)") +
+                    geom_text(aes(label = Country, vjust = 2), 
+                              size = 3.5, color = "black") +
+                    labs(x = "% of Responders Who Reported a Decrease in Total Income",
+                         y = "Increase in Poverty (%)") +
                     theme_bw() +
                     theme(legend.position = "none") +
-                    ylim(0, 100) +
-                    xlim(0, 5)    
+                    xlim(0, 100) +
+                    ylim(0, 5)    
             }
             
             else{
                 if(input$select_indicator == "food") {
-                    ggplot(food, aes(x = poverty_increase, y = skip_meal, color = country)) +
+                    ggplot(food, aes(y = poverty_increase, x = skip_meal, 
+                                     color = country)) +
                         geom_point() +
-                        geom_text(aes(label = country, vjust = 2), size = 3.5, color = "black") +
-                        labs(y = "Percentage of Responders Who Reported \n Skipping a Meal in the Past 30 Days",
-                             x = "Increase in Poverty (percentage points)") +
+                        geom_text_repel(aes(label = country, vjust = -1), 
+                                  size = 3.5, color = "black", 
+                                  segment.color = "transparent") +
+                        labs(x = "Percentage of Responders Who Reported Skipping a Meal in the Past 30 Days",
+                             y = "Increase in Poverty (%)") +
                         theme_bw() +
                         theme(legend.position = "none") +
-                        ylim(0, 100) +
-                        xlim(-1, 5) +
-                        geom_vline(xintercept = 0, linetype = "dashed")
+                        xlim(0, 100) +
+                        ylim(-1, 5) +
+                        geom_hline(yintercept = 0, linetype = "dashed")
                 }
                 else{
                     if(input$select_indicator == "education"){
-                        ggplot(education, aes(x = poverty_increase, y = education, color = Country)) +
+                        ggplot(education, aes(y = poverty_increase, 
+                                              x = education, 
+                                              color = Country)) +
                             geom_point() +
-                            geom_text_repel(aes(label = Country, vjust = 2), size = 3.5, color = "black", segment.color = "transparent") +
-                            labs(y = "Percentage of Responders Who Reported Their \n School-Aged Children Were Still Engaged \n in any Educational Learning",
-                                 x = "Increase in Poverty (percentage points)") +
+                            geom_text_repel(aes(label = Country, vjust = -1), 
+                                            size = 3.5, color = "black", 
+                                            segment.color = "transparent") +
+                            labs(x = "% of Responders Who Reported Their School-Aged Children Were Still Engaged in any Educational Learning",
+                                 y = "Increase in Poverty (%)") +
                             scale_color_discrete("Country") +
                             theme_bw() +
                             theme(legend.position = "none") +
-                            ylim(0, 100) +
-                            xlim(-1, 5) +
-                            geom_vline(xintercept = 0, linetype = "dashed")
+                            xlim(0, 100) +
+                            ylim(-1, 5) +
+                            geom_hline(yintercept = 0, linetype = "dashed")
                     }
                 }
             }}
@@ -693,97 +713,134 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
             }
         }}
     })
-
-    output$PlotLabor <- renderPlot({
-        ggplot(labor, aes(x = poverty_increase, y = working_stop, color = country)) +
-            geom_point() +
-            geom_text(aes(label = country, vjust = 2), size = 3.5, color = "black") +
-            labs(y = "Percentage of Responders Who Reported Having \nStopped Working Since the COVID-19 Outbreak",
-                 x = "Increase in Poverty (percentage points)") +
-            xlim(0, 5) +
-            ylim(0, 100) +
-            scale_color_discrete("Country") +
-            theme_bw() +
-            theme(legend.position = "none")
-        
-    })
     
-    output$PlotIncome <- renderPlot({
-        ggplot(income, aes(x = poverty_increase, y = decrease_total_income, color = Country)) +
-            geom_point() +
-            geom_text(aes(label = Country, vjust = 2), size = 3.5, color = "black") +
-            labs(y = "Percentage of Responders Who Reported \n a Decrease in Total Income",
-                 x = "Increase in Poverty (percentage points)") +
-            theme_bw() +
-            theme(legend.position = "none") +
-            ylim(0, 100) +
-            xlim(0, 5)
+    output$VariableDefinition <- renderText({
+      if(input$select_definition == "electricity") {
+        "The percentage of a country's population with access 
+        to electricity. Electrification data are collected from 
+        industry, national surveys and international sources."
+      }
+      
+      else {
+        if(input$select_definition == "literacy") {
+          "The percentage of people ages 15 and above who can 
+          both read and write with understanding a short simple 
+          statement about their everyday life."
+        }
         
-    })
-    
-    output$PlotFood <- renderPlot({
-        ggplot(food, aes(x = poverty_increase, y = skip_meal, color = country)) +
-            geom_point() +
-            geom_text(aes(label = country, vjust = 2), size = 3.5, color = "black") +
-            labs(y = "Percentage of Responders Who Reported \n Skipping a Meal in the Past 30 Days",
-                 x = "Increase in Poverty (percentage points)") +
-            theme_bw() +
-            theme(legend.position = "none") +
-            ylim(0, 100) +
-            xlim(-1, 5) +
-            geom_vline(xintercept = 0, linetype = "dashed")
-        
-    })
-    
-    output$PlotEducation <- renderPlot({
-        ggplot(education, aes(x = poverty_increase, y = education, color = Country)) +
-            geom_point() +
-            geom_text_repel(aes(label = Country, vjust = 2), size = 3.5, color = "black", segment.color = "transparent") +
-            labs(y = "Percentage of Responders Who Reported Their \n School-Aged Children Were Still Engaged \n in any Educational Learning",
-                 x = "Increase in Poverty (percentage points)") +
-            scale_color_discrete("Country") +
-            theme_bw() +
-            theme(legend.position = "none") +
-            ylim(0, 100) +
-            xlim(-1, 5) +
-            geom_vline(xintercept = 0, linetype = "dashed")
-        
-    })
+        else {
+          if(input$select_definition == "gdp") {
+            "The annual percentage growth rate of GDP at 
+            market prices based on constant local currency. Aggregates
+            are based on constant 2010 U.S. dollars. GDP is the sum of
+            gross value added by all resident producers in the economy
+            plus any product taxes and minus any subsidies not included
+            in the value of the products. It is calculated without 
+            making deductions for depreciation of fabricated assets 
+            or for depletion and degradation of natural resources.
+"
+          }
+          
+          else{
+            if(input$select_definition == "child") {
+              "The percentage of children between the ages of
+              7 and 14 who work."
+              
+            }
+            
+            else{
+              if(input$select_definition == "gini") {
+                "Measurement of inequality, specifically, the extent to which 
+                     the distribution of income (or, in some cases, consumption
+                     expenditure) among individuals or households within an 
+                     economy deviates from a perfectly equal distribution."
+                
+              }
+              else{
+                if(input$select_definition == "goveff") {
+                  "Captures perceptions of the quality of public services, the 
+                  quality of the civil service and the degree of its 
+                  independence from political pressures, the quality of 
+                  policy formulation and implementation, and the 
+                  credibility of the government's commitment to such 
+                  policies. Estimate gives the country's score on the 
+                  aggregate indicator, in units of a standard normal 
+                  distribution, i.e. ranging from approximately -2.5 to 2.5."
+                  
+                }
+                else{
+                  if(input$select_definition == "life") {
+                    "The number of years a newborn infant would live 
+                     if prevailing patterns of mortality at the time of its 
+                     birth were to stay the same throughout its life."
+                    
+                  }
+                  
+                  else{
+                    if(input$select_definition == "nourishment") {
+                    "Percentage of population below minimum level
+                     of dietary energy consumption (also referred to as 
+                     prevalence of undernourishment) shows the percentage 
+                     of the population whose food intake is insufficient to 
+                     meet dietary energy requirements continuously. Data 
+                     showing as 5 may signify a prevalence of 
+                     undernourishment below 5%."
+                      
+                    }
+                    
+                    else{
+                      if(input$select_definition == "school") {
+                     "The ratio of children of official school age 
+                     who are enrolled in school to the population of the 
+                     corresponding official school age."
+                        
+                      }
+                    }
+                  }
+                }
+              }
+          }
+        }}
+    }})
     
     # Render plot that displays a scatterplot and line of best fit when 1 X and 1
     # Y variable are selected.
     
-    output$poverty_regression <- renderPlot({
-        p = indicator_data %>%
-            ggplot(aes_string(x = input$varOI_x, y = input$varOI_y)) +
-            geom_point() +
-            theme_classic() +
-            geom_jitter() +
-            labs(title = "Scatterplot depicting relationship between X1 and Y variables",
-                 caption = "Sources: World Bank Group")
+  output$poverty_regression <- renderPlot({
+      p = indicator_data %>%
+          ggplot(aes_string(x = input$varOI_x, y = input$varOI_y)) +
+          geom_point() +
+          theme_classic() +
+          geom_jitter() +
+          labs(title = "Scatterplot Depicting Relationship Between the X1 and Y Variables",
+               caption = "Source: World Bank Group")
         
         # Add appropriate axis labels based on variables selected.
         
-        if (input$varOI_x == "government_effectiveness_estimate")
+      if (input$varOI_x == "government_effectiveness_estimate")
             p <- p + xlab("Degree of Government Effectiveness")
-        if (input$varOI_x == "literacy_rate_adult_total_percent_of_people_ages_15_and_above")
+      if (input$varOI_x == 
+          "literacy_rate_adult_total_percent_of_people_ages_15_and_above")
             p <- p + xlab("Adult Literacy (%):")
-        if (input$varOI_x == "prevalence_of_undernourishment_percent_of_population")
+      if (input$varOI_x == 
+          "prevalence_of_undernourishment_percent_of_population")
             p <- p + xlab("Prevalence of Undernourishment (%)")
                 
-                if (input$varOI_y == "poverty_headcount_ratio_at_1_90_a_day_2011_ppp_percent_of_population")
+      if (input$varOI_y == 
+          "poverty_headcount_ratio_at_1_90_a_day_2011_ppp_percent_of_population")
                     p <- p + ylab("Poverty Rate at $1.90 a day (2011 PPP, %)")
-                if (input$varOI_y == "poverty_headcount_ratio_at_national_poverty_lines_percent_of_population")
+        if (input$varOI_y == 
+           "poverty_headcount_ratio_at_national_poverty_lines_percent_of_population")
                     p <- p + ylab("Poverty Rate at National Poverty Lines (%)")
                 
                         
                         # Add appropriate trendline, based on user selection. 
                         
-                        if (input$type == "toggleLinear")
-                            p <- p + geom_smooth(method = "lm",
-                                                 se = TRUE,
-                                                 formula = y ~ x)
-                        p
+        if (input$type == "toggleLinear")
+            p <- p + geom_smooth(method = "lm",
+                 se = TRUE,
+                 formula = y ~ x)
+                 p
     })
     
     # Render regression output. First, choose the appropriate model, based on
@@ -803,7 +860,8 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
             pov_model <-
                 stan_glm(data = indicator_data,
                          family = gaussian,
-                         formula = paste(input$varOI_y, " ~ ", input$varOI_x, "+", input$varOI_x2),
+                         formula = paste(input$varOI_y, " ~ ", 
+                                         input$varOI_x, "+", input$varOI_x2),
                          refresh = 0
                 ) }
         
@@ -811,7 +869,10 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
             pov_model <-
               stan_glm(data = indicator_data,
                        family = gaussian,
-                       formula = paste(input$varOI_y, " ~ ", input$varOI_x, "+", input$varOI_x2, "+", input$varOI_x3),
+                       formula = paste(input$varOI_y, " ~ ", 
+                                       input$varOI_x, "+", 
+                                       input$varOI_x2, "+", 
+                                       input$varOI_x3),
                        refresh = 0
               ) }}
         
@@ -821,7 +882,9 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
             pov_model <-
               stan_glm(data = indicator_data,
                        family = gaussian,
-                       formula = paste(input$varOI_y, " ~ ", input$varOI_x, "*", input$varOI_x2),
+                       formula = paste(input$varOI_y, " ~ ", 
+                                       input$varOI_x, "*", 
+                                       input$varOI_x2),
                        refresh = 0
               ) }
           
@@ -829,7 +892,10 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
             pov_model <-
               stan_glm(data = indicator_data,
                        family = gaussian,
-                       formula = paste(input$varOI_y, " ~ ", input$varOI_x, "*", input$varOI_x2, "+", input$varOI_x3),
+                       formula = paste(input$varOI_y, " ~ ", 
+                                       input$varOI_x, "*", 
+                                       input$varOI_x2, "+", 
+                                       input$varOI_x3),
                        refresh = 0
               ) }}
         
@@ -838,7 +904,10 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
             pov_model <-
               stan_glm(data = indicator_data,
                        family = gaussian,
-                       formula = paste(input$varOI_y, " ~ ", input$varOI_x, "*", input$varOI_x2, "*", input$varOI_x3),
+                       formula = paste(input$varOI_y, " ~ ", 
+                                       input$varOI_x, "*", 
+                                       input$varOI_x2, "*", 
+                                       input$varOI_x3),
                        refresh = 0
               ) }
         
