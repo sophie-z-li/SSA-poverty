@@ -201,10 +201,17 @@ world_simple_custom@polygons
 ```
 
 ```{r}
-library(shiny)
-renderDataTable(iris, options = list(
-  pageLength = 5,
-  initComplete = I('function(setting, json) { alert("done"); }')
-))
+finaldata <- read_xlsx("raw_data/finaldata.xlsx", 3) %>%
+  mutate(pov_increase = `2020_new` - `2019_new`,
+         pov_increase_BA = `2020_BA` - `2019_BA`,
+         pov_increase_MPO =`2020_MPO` - `2019_MPO`)
+
+population <- read_xls("raw_data/population.xls", 1) %>%
+  clean_names() %>%
+  select(country_code, x2019) %>%
+  rename(population = x2019)
+
+finaldata <- left_join(finaldata, population, by = c("code" = "country_code"))
+
 ```
 

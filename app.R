@@ -27,14 +27,23 @@ education <- read_xlsx("raw_data/ssa_hfs.xlsx", 4)
 indicator_data <- read_csv("raw_data/indicator.csv")
 
 finaldata <- read_xlsx("raw_data/finaldata.xlsx", 3) %>%
-  mutate(pov_increase = `2020_new` - `2019_new`)
+  mutate(pov_increase = `2020_new` - `2019_new`,
+         pov_increase_BA = `2020_BA` - `2019_BA`,
+         pov_increase_MPO =`2020_MPO` - `2019_MPO`)
+
+population <- read_xls("raw_data/population.xls", 1) %>%
+  clean_names() %>%
+  select(country_code, x2019) %>%
+  rename(population = x2019)
+
+finaldata <- left_join(finaldata, population, by = c("code" = "country_code"))
 
 # Loading leaflet data
 
 data("wrld_simpl")
 world_simple_custom <- wrld_simpl
 
-world_simple_custom@data <- left_join(world_simple_custom@data, finaldata, 
+world_simple_custom@data <- right_join(world_simple_custom@data, finaldata, 
                                       by = c("ISO3" = "code")) %>%
   clean_names() 
 
@@ -42,7 +51,7 @@ world_simple_custom@data <- left_join(world_simple_custom@data, finaldata,
 # Define UI ----
 ui <- fluidPage(
     
-    theme = shinytheme("slate"),
+    theme = shinytheme("flatly"),
     
     titlePanel(
         h1("Analyzing COVID-19's Impact on Poverty in Sub-Saharan Africa", 
@@ -57,145 +66,143 @@ ui <- fluidPage(
                  HTML('<center><img src="Africa.png" width="400"></center>'),
                  br(),
                  br(),
-                 h3("About Me"),
-                 p("My name is Sophie, and I am a junior at Harvard College
-                   studying Philosophy. As a native Houstonian, I love all
-                   things barbeque and am the proud owner of two miniature
-                   cacti. You can find the link to my Github", 
-                   a("here", href ="https://github.com/sophie-z-li")),
-                 br(),
-                 h3("About this Project"),
-                 p("For my final project, I partnered with the
-                   World Bank Group's Global Poverty and Equity Practice to analyze
-                   COVID-19's impact on poverty in the sub-Saharan Africa
-                   region."),
-                 p("This dashboard updates", a("previously published estimates", 
-                   href = "https://openknowledge.worldbank.org/handle/10986/33765"),"
-                   of COVID-19’s effect on poverty levels in Sub-Saharan Africa 
-                   (SSA), using GDP growth projections from the October 2020 
-                   World Economic Outlook (WEO) database. Prior
-                   projections were created based on April 2020 WEO numbers.")),
+                 h3("How much will poverty rise in Sub-Saharan Africa in 2020?"),
+                 p("Since its initial outbreak, the COVID-19 has brought about 
+                 a sharp reduction in global economy activity. For Sub-Saharan 
+                 Africa (SSA), daily infections rates have declined since 
+                 mid-July, although recently, there has been a small spike in 
+                 new cases as countries continue to conduct more testing. While 
+                 the officially reported infections in SSA remain relatively 
+                 low compared to other regions, the data may be misleading given
+                 that testing capacity is limited in many countries, and we may 
+                 still be in the intermediate stages of the pandemic in the 
+                 region. Areas with weak healthcare infrastructure could easily
+                 be overwhelmed by a rapidly expanding pandemic, the effects of 
+                 which will be aggravated by the global economic downturn as 
+                 well as government-mandated lockdowns in the region."),
+                 h3("The Analysis"),
+                 p("This dashboard presents estimates of the increase in poverty
+                 and as an update from a", a("previous World Bank note", 
+                 href = "https://openknowledge.worldbank.org/handle/10986/33765")," 
+                 which was 
+                 published in May 2020. Updated estimates based on the October 
+                 2020 World Economic Outlook vintage suggest that COVID-19 will
+                 have a more severe impact on poverty rates than originally 
+                 projected. Additionally, data from high-frequency phone surveys
+                 indicate that the pandemic has created severe disturbances in
+                 the labor market, household income, food security, and 
+                 educational attainment within the region.")),
         tabPanel("Methodology",
                  br(),
+                 HTML('<center><img src="worldbank.jpg" width="400"></center>'),
                  h3("Calculating Poverty"),
                  p("Poverty projections were created by running a pre-existing
-                 Stata do-file on updated WEO numbers. While I originally planned
-                 on running the do-file to derive the numbers myself, a lack of 
-                 access to some proprietary data at the World Bank derailed this 
-                 plan. What ultimately happened was I gathered all the new 
-                 information I could access to update this do-file and sent it to 
-                 my project supervisor Jose Montes. Jose then added the final
-                 necessary data, ran the do-file, and then sent the outputted 
-                 projections back to me for visualization and analysis. Below 
-                 is a brief explanation of how poverty was mathematically 
-                 calculated within the do-file."),
-                 br(),
-                 h5("Inputs"),
+                 Stata do-file, which was provided by the World Bank's Poverty
+                 and Equity Team. The do-file took the
+                 following four inputs:"),
                  HTML("<ul><li>Poverty rate per country at the year 2018 (World 
                      Bank Data)</li><li>GDP per capita growth 2019-2021 (World 
                      Economic Outlook Data)</li><li>Welfare aggregate per 
                      country at 2018 (World Bank Data)</li><li>Poverty line at 
                      1.9 PPP (World Bank Data)</li></ul>"),
-                 br(),
-                 h5("Formulas"),
-                 HTML("<ul><li>Welfare Estimation</li></ul>"),
-                 p(HTML(paste0("welfare",tags$sub("year"), "= welfare", 
-                 tags$sub("year-1"), "* (1 + growthGDPpc",
-                 tags$sub("year"), ")"))),
-                 HTML("<ul><li>Poverty Estimation</li></ul>"),
-                 p(HTML(paste0("Poverty",tags$sub("year"), "="))),
-                 p(HTML(paste0("0 if welfare",tags$sub("year"), "> 1.9"))), 
-                 p(HTML(paste0("1 if welfare",tags$sub("year"), "≤ 1.9"))),
-                 HTML("<ul><li>Regional Poverty Rate Estimation</li></ul>"),
-                 p(HTML(paste0("(PovertyRate",tags$sub("country1"), 
-                 "*Population",tags$sub("countryn"), "+ PovertyRate",
-                 tags$sub("countryn", "* Population",tags$sub("countryn"), 
-                 "/Σ (n = 1 to n, for population)"))))
+                 p("The methodology used was identical to the May 2020 World 
+                 Bank note. We first defined shock to GDP as the difference 
+                 between the two most recent GDP projections from the IMF’s 
+                 World Economic Outlook (WEO). In this case, it was the October
+                 2019 and October 2020 vintages. We then simulated the change
+                 in poverty rates by adjusting the welfare of households from a
+                 database of household surveys, forecasting the welfare aggregate
+                 of each country by the growth of the GDP per capita assuming a
+                 “distributionally neutral” impact in welfare. The difference in
+                 lined-up poverty rates between the two vintages is a rough 
+                 estimate of the effect of the crisis on poverty. For more 
+                 information, please refer to", a("the May 2020 note.", 
+                 href = "https://openknowledge.worldbank.org/handle/10986/33765")),
+                 h3("Poverty Projections"),
+                 p("This dashboard utilizes three different poverty projections.
+                   The first two are POVCAL estimates, which are calculated
+                   using the above methology. The baseline POVCAL estimate depicts
+                   pre-COVID poverty projections based on
+                   the October 2019 WEO vintage. The new POVCAL estimate depicts
+                   the updated poverty projections post-outbreak. using the
+                   October 2020 WEO vintage."),
+                 p("This dashboard also utilizes the World Bank’s latest Macro 
+                 Poverty Outlook (MPO) projections, which analyzes 
+                 country-specific poverty developments. MPOs projections are 
+                 based on GDP-poverty elasticities for the latest available 
+                 household surveys used to measure poverty. Although MPO 
+                 projections also follow a distributional neutral approach, 
+                 the magnitude of the impact in welfare aggregate depends on 
+                 the welfare and GDP per capita elasticity chosen by the poverty
+                 economist in charge of each country."),
+                 p("*Unless MPO is specifically stated, mentions of poverty
+                   projections in this dashboard to poverty projections will
+                   be in reference to POVCAL estimates (in accordance with World
+                   Bank practice."),
+                 p("**While I gathered the above inputs, ultimately, the
+                   finalized do-file was run by my project supervisor, Jose
+                   Montes, due to my not having possession of certain proprietary
+                   data.")
                  ),
         "Data",
+        tabPanel("Country-Level Data",
+            h3("Examining Poverty by Country"),
+            p("Click on a country below to see the change in poverty
+              rate (POVCAL estimates)."),
+            leafletOutput("SSAmap"),
+        br(),
+        dataTableOutput("pov_change")
+        ),
         tabPanel("Regional Data",
                  mainPanel(
-                 h3("Comparing Poverty Differences By Region"),
-                 p("This interactive feature allows you to visualize changes
+                   h3("Comparing Poverty Differences By Region"),
+                   p("This interactive feature allows you to visualize changes
                    in poverty over time in different SSA regions. In the 
                    drop-down menu below, select the region of interest."),
-                 p("The Eastern/Central region (AFE) includes Angola, Botswana, 
+                   p("The Eastern/Central region (AFE) includes Angola, Botswana, 
                    Burundi, Comoros, the Democratic Republic of the Congo, 
                    Eswantini, Ethiopia, Kenya, Lesotho, Madagascar, Malawi, 
                    Mauritius, Mozambique, Namibia, Rwanda, São Tomé and Príncipe,
                   Seychelles, South Africa, South Sudan, Sudan, Tanzania,
                    Uganda, Zambia, and Zimbabwe."),
-                 p("The Western/Southern region (AFW) includes Benin, Burkina Faso,
+                   p("The Western/Southern region (AFW) includes Benin, Burkina Faso,
                    Cameroon, Cabo Verde, Central African Republic, Chad, Côte
                    d'Ivoire, Gabon, Ghana, Guinea, Guinea-Bissau, Liberia, Mali,
                    Mauritania, Niger, Nigeria, Republic of Congo, Senegal,
                    Sierra Leone, The Gambia, and Togo."),
-                 br()),
+                   br()),
                  mainPanel(
-                 selectInput("select_region",
-                             "Select Region",
-                              c("Sub-Saharan" = "SSA", 
-                              "Eastern/Central" = "AFE", 
-                              "Western/Southern" = "AFW")),
-                 br(),
-                 plotOutput("PlotsRegional", width = 700),
-                 br(),
-                 textOutput("PlotsRegionalText"),
-                 br(),
-                 br())
-                 
-                  ),
-        tabPanel("Country-Level Data",
-            h2("Examining Poverty by Country"),
-            p("Click on the countries below to see change in poverty"),
-            tags$style(HTML("
-                    .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_processing, .dataTables_wrapper .dataTables_paginate, .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
-                    color: #ffffff;
-                    }
-### ADD THIS HERE ###
-                    .dataTables_wrapper .dataTables_paginate .paginate_button{box-sizing:border-box;display:inline-block;min-width:1.5em;padding:0.5em 1em;margin-left:2px;text-align:center;text-decoration:none !important;cursor:pointer;*cursor:hand;color:#ffffff !important;border:1px solid transparent;border-radius:2px}
-
-###To change text and background color of the `Search` box ###
-                    .dataTables_filter input {
-                            color: #0E334A;
-                            background-color: #0E334A
-                           }
-
-                    thead {
-                    color: #ffffff;
-                    }
-
-                     tbody {
-                    color: #000000;
-                     }
-                    
-                    input, button, select, textarea {
-    font-family: inherit;
-    font-size: inherit;
-    line-height: inherit;
-    color: black;
-                    }
-                    
-                    a.paginate_button {
-    font-family: inherit;
-    font-size: inherit;
-    line-height: inherit;
-    color: white;
-                    }
-
-                   "
-                            
-                            
-                            
-            )
-        ),
-            dataTableOutput("pov_change"),
-        br(),
-          leafletOutput("SSAmap")
-        ),
+                   selectInput("select_region",
+                               "Select Region",
+                               c("Sub-Saharan" = "SSA", 
+                                 "Eastern/Central" = "AFE", 
+                                 "Western/Southern" = "AFW")),
+                   br(),
+                   plotOutput("PlotsRegional", width = 700),
+                   br(),
+                   p("The pandemic is projected to have a slightly higher 
+                   impact on poverty levels in Western/Central Africa than 
+                   Eastern/Southern Africa. Poverty is expected to increase 
+                   around 3 percentage points for Western/Central Africa, 
+                   effectively wiping out four years of progress in reducing 
+                   poverty. Poverty is also estimated to increase by almost 
+                   2 percentage points for Eastern/Southern Africa, 
+                   negating over three years of progress. However, overall 
+                   poverty rates are still lower in AFW compared to AFE. The 
+                   poverty rate in AFW is projected to be around 37 percent for
+                   2020, while the poverty rate in AFE is estimated to be 
+                   between 44 percent for the same year. The difference in 
+                   poverty rates between the two regions is a stark contrast to 
+                   10 years ago, when the two regions’ poverty rates were both 
+                   around 47 percent. It appears that countries in the AFW 
+                   region have overall been more effective at reducing poverty
+                   compared to AFE countries, which may explain why AFW 
+                   countries’ poverty rates were slightly more impacted by the 
+                   pandemic."),
+                   br(),
+                   br())),
         tabPanel("High-Frequency Phone Surveys",
                  mainPanel(
-                 br(),
                  h3("COVID-19 High Frequency Monitoring"),
                  p("The following data was pulled from the World Bank's
                    COVID-19 High-Frequency Monitoring beta (link to
@@ -214,9 +221,8 @@ ui <- fluidPage(
                  br(),
                  textOutput("PlotsIndicatorText"),
                  br())),
-        "Model",
-        tabPanel("Regression",
-                 h2("Predicting Poverty"),
+        tabPanel("Model",
+                 h3("Predicting Poverty"),
                  p(
                      "This project's dataset was taken from the World Bank, blah,
                      blah, blah, add more stuff here."
@@ -332,12 +338,6 @@ mainPanel(
     
     gt_output(outputId = "RegSum"),
     
-    # Use CSS styling to hide all error messages. This is necessary
-    # because the scatterplot displays an error if more than 1 X variable
-    # is selected. I ran many tests and could not find a reason why this
-    # would be a problem (i.e. where displaying error results would be
-    # necessary).
-    
     tags$style(
         type = "text/css",
         ".shiny-output-error {display: none;}",
@@ -349,9 +349,7 @@ mainPanel(
 
 
         "Other Resources",
-tabPanel("Introduction",
-         br(),
-         HTML('<center><img src="worldbank.jpg" width="400"></center>'),
+tabPanel("About",
          br(),
          br(),
          h3("About Me"),
@@ -387,10 +385,10 @@ server <- function(input, output) {
         region_poverty %>%
             filter(year >= 2010) %>%
             filter(region == input$select_region) %>%
-            ggplot(aes(x = year, y = poverty, color = type)) +
+            ggplot(aes(x = year, y = poverty, color = type, label = poverty)) +
             geom_line(size = 1) +
             geom_point(size = 2) +
-            labs(title = "Changes in Poverty in the Overall sub-Saharan Region",
+            labs(title = "Changes in Poverty in the Overall Sub-Saharan Region",
                  x = "Year",
                  y = "Poverty Rate") + 
             ylim(32, 48) +
@@ -399,16 +397,14 @@ server <- function(input, output) {
                                            "Post-Pandemic (POVCAL)", 
                                            "Post-Pandemic (MPO)")) +
             theme_bw() +
-            theme(panel.border =element_rect(color = "black", fill = NA, 
-                                             size =3),
-                  plot.title = element_text(hjust = 0.5))
+            theme(plot.title = element_text(hjust = 0.5))
         }
         else{
             if(input$select_region == "AFE"){
                 region_poverty %>%
                     filter(year >= 2010) %>%
                     filter(region == input$select_region) %>%
-                    ggplot(aes(x = year, y = poverty, color = type)) +
+                    ggplot(aes(x = year, y = poverty, color = type, label = poverty)) +
                     geom_line(size = 1) +
                     geom_point(size = 2) +
                     labs(title = "Changes in Poverty in Eastern/Central Africa",
@@ -420,9 +416,7 @@ server <- function(input, output) {
                                                     "Post-Pandemic (POVCAL)", 
                                                     "Post-Pandemic (MPO)")) +
                     theme_bw() +
-                    theme(panel.border =element_rect(color = "black", fill = NA, 
-                                                     size =3),
-                          plot.title = element_text(hjust = 0.5))    
+                    theme(plot.title = element_text(hjust = 0.5))    
             }
         
         else{
@@ -430,7 +424,7 @@ server <- function(input, output) {
                 region_poverty %>%
                     filter(year >= 2010) %>%
                     filter(region == input$select_region) %>%
-                    ggplot(aes(x = year, y = poverty, color = type)) +
+                    ggplot(aes(x = year, y = poverty, color = type, label = poverty)) +
                     geom_line(size = 1) +
                     geom_point(size = 2) +
                     labs(title = "Changes in Poverty in Western/Southern Africa",
@@ -442,9 +436,7 @@ server <- function(input, output) {
                                                     "Post-Pandemic (POVCAL)", 
                                                     "Post-Pandemic (MPO)")) +
                     theme_bw() +
-                    theme(panel.border =element_rect(color = "black", fill = NA, 
-                                                     size =3),
-                          plot.title = element_text(hjust = 0.5))
+                    theme(plot.title = element_text(hjust = 0.5))
             }
         }}
         
@@ -456,9 +448,11 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
                                      "LBR", "LSO", "MDG", "MLI", "MOZ", "MRT", "MUS", "MWI", "NAM", "NER", "NGA",
                                      "RWA", "SDN", "SEN", "SLE", "SSD", "STP", "SWZ", "SYC", "TCD", "TGO", "TZA", 
                                      "UGA", "ZAF", "ZMB", "ZWE")) %>%
-                                     select(name, pov_increase)
-                                       , options = list(
-  pageLength = 5)
+                                     select(name, population, pov_increase), 
+                                     colnames = c("Country", "Population", 
+                                                  "Poverty Increase (%)"), 
+                                     options = list(
+  pageLength = 10)
 )
     
     # Leaflets
@@ -476,7 +470,10 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
                       world_simple_custom$name,
                       "<br>",
                       "Increase in Poverty:",
-                      world_simple_custom$pov_increase
+                      world_simple_custom$pov_increase,
+                      "<br>",
+                      "Population:",
+                      finaldata$population
                     )) %>%
         setView(lng = 6.6111, lat = 20.9394, zoom = 3) %>%
         addLegend(
