@@ -36,16 +36,17 @@ population <- read_xls("raw_data/population.xls", 1) %>%
   select(country_code, x2019) %>%
   rename(population = x2019)
 
-finaldata <- left_join(finaldata, population, by = c("code" = "country_code"))
+finaldata <- left_join(finaldata, population, by = c("code" = "country_code")) %>%
+  mutate(new_poor = pov_increase*population)
 
 # Loading leaflet data
 
 data("wrld_simpl")
 world_simple_custom <- wrld_simpl
 
-world_simple_custom@data <- right_join(world_simple_custom@data, finaldata, 
+world_simple_custom@data <- left_join(world_simple_custom@data, finaldata, 
                                       by = c("ISO3" = "code")) %>%
-  clean_names() 
+  clean_names()
 
 
 # Define UI ----
@@ -67,7 +68,7 @@ ui <- fluidPage(
                  br(),
                  br(),
                  h3("How much will poverty rise in Sub-Saharan Africa in 2020?"),
-                 p("Since its initial outbreak, the COVID-19 has brought about 
+                 p("Since its initial outbreak, the COVID-19 pandemic has brought about 
                  a sharp reduction in global economy activity. For Sub-Saharan 
                  Africa (SSA), daily infections rates have declined since 
                  mid-July, although recently, there has been a small spike in 
@@ -138,7 +139,7 @@ ui <- fluidPage(
                  p("*Unless MPO is specifically stated, mentions of poverty
                    projections in this dashboard to poverty projections will
                    be in reference to POVCAL estimates (in accordance with World
-                   Bank practice."),
+                   Bank practices.)"),
                  p("**While I gathered the above inputs, ultimately, the
                    finalized do-file was run by my project supervisor, Jose
                    Montes, due to my not having possession of certain proprietary
@@ -150,6 +151,7 @@ ui <- fluidPage(
             p("Click on a country below to see the change in poverty
               rate (POVCAL estimates)."),
             leafletOutput("SSAmap"),
+            tags$style(type="text/css", "div.info.legend.leaflet-control br {clear: both;}"),
         br(),
         dataTableOutput("pov_change")
         ),
@@ -204,9 +206,10 @@ ui <- fluidPage(
         tabPanel("High-Frequency Phone Surveys",
                  mainPanel(
                  h3("COVID-19 High Frequency Monitoring"),
-                 p("The following data was pulled from the World Bank's
-                   COVID-19 High-Frequency Monitoring beta (link to
-                   external dashboard). Preliminary data from high-frequency 
+                 p("The following data was pulled from the World Bank's",
+                 a("COVID-19 High-Frequency Monitoring", 
+                 href = "https://openknowledge.worldbank.org/handle/10986/33765"),
+                 "beta. Preliminary data from high-frequency 
                    phone surveys indicate major disruptions to labor markets, 
                    household income, food security, and educational attainment 
                    within the SSA region."),
@@ -224,38 +227,80 @@ ui <- fluidPage(
         tabPanel("Model",
                  h3("Predicting Poverty"),
                  p(
-                     "This project's dataset was taken from the World Bank, blah,
-                     blah, blah, add more stuff here."
+                     "This project's dataset was taken from the World Bank. The
+                     variables below were derived from the Environment and
+                     Social Government database. Below are the definitions for
+                     all available covariates (quoted directly from the World
+                     Bank."
                  ),
                  tags$ul(
                      tags$li(
-                         tags$b("Government Effectiveness Estimate"), "captures 
-                         perceptions of the quality of public services, the 
-                         quality of the civil service and the degree of its 
-                         independence from political pressures, the quality of 
-                         policy formulation and implementation, and the 
-                         credibility of the government's commitment to such 
-                         policies. Estimate gives the country's score on the 
-                         aggregate indicator, in units of a standard normal 
-                         distribution, i.e. ranging from approximately -2.5 to 
-                         2.5.(source: World Bank Group)."
+                       tags$b("Access to Electricity (%)"), 
+                       "is the percentage of a country's population with access 
+                       to electricity. Electrification data are collected from 
+                       industry, national surveys and international sources.)."
                      ),
                      tags$li(
-                         tags$b("Adult Literacy Rate (as % of total population"), 
-                         "is the percentage of people ages 15 and above who can 
+                     tags$b("Adult Literacy Rate (%)"), 
+                     "is the percentage of people ages 15 and above who can 
                          both read and write with understanding a short simple 
-                         statement about their everyday life. (source: World Bank)."
+                         statement about their everyday life."
+                   ),
+                   tags$li(
+                     tags$b("Annual GDP Growth"), 
+                     "refers to the annual percentage growth rate of GDP at 
+                     market prices based on constant local currency. Aggregates
+                     are based on constant 2010 U.S. dollars. GDP is the sum of
+                     gross value added by all resident producers in the economy
+                     plus any product taxes and minus any subsidies not included
+                     in the value of the products. It is calculated without 
+                     making deductions for depreciation of fabricated assets 
+                     or for depletion and degradation of natural resources."
+                   ),
+                   tags$li(
+                     tags$b("Child Employment"), 
+                     "refers to the percentage of children between the ages of
+                     7 and 14 who work."
+                   ),
+                   tags$li(
+                     tags$b("Gini Index"), 
+                     "measures inequality, specifically, the extent to which 
+                     the distribution of income (or, in some cases, consumption
+                     expenditure) among individuals or households within an 
+                     economy deviates from a perfectly equal distribution."
+                   ),
+                   tags$li(
+                     tags$b("Government Effectiveness Estimate"), "captures 
+                     perceptions of the quality of public services, the 
+                     quality of the civil service and the degree of its 
+                     independence from political pressures, the quality of 
+                     policy formulation and implementation, and the 
+                     credibility of the government's commitment to such 
+                     policies. Estimate gives the country's score on the 
+                     aggregate indicator, in units of a standard normal 
+                     distribution, i.e. ranging from approximately -2.5 to 2.5."
                      ),
-                     tags$li(
-                         tags$b("Prevalence of Undernourishment (as % of 
-                         population"), "refers to Population below minimum level
-                         of dietary energy consumption (also referred to as 
-                         prevalence of undernourishment) shows the percentage 
-                         of the population whose food intake is insufficient to 
-                         meet dietary energy requirements continuously. Data 
-                         showing as 5 may signify a prevalence of 
-                         undernourishment below 5%. (source: World Bank)."
-                     )),
+                   tags$li(
+                     tags$b("Life Expectancy at Birth"), 
+                     "refers to the number of years a newborn infant would live 
+                     if prevailing patterns of mortality at the time of its 
+                     birth were to stay the same throughout its life."
+                   ),
+                   tags$li(
+                     tags$b("Prevalence of Undernourishment (as % of 
+                     population)"), "refers to Population below minimum level
+                     of dietary energy consumption (also referred to as 
+                     prevalence of undernourishment) shows the percentage 
+                     of the population whose food intake is insufficient to 
+                     meet dietary energy requirements continuously. Data 
+                     showing as 5 may signify a prevalence of 
+                     undernourishment below 5%. (source: World Bank)."),
+                   tags$li(
+                     tags$b("Primary School Enrollment (% net)"), 
+                     "refers to the ratio of children of official school age 
+                     who are enrolled in school to the population of the 
+                     corresponding official school age."
+                   )),
                  p(
                      "blah, blah, blah, say something cool about this model"
                  ),
@@ -266,9 +311,15 @@ ui <- fluidPage(
                              "varOI_x",
                              "X1 variable:",
                              choices = c(
-                                 "Government Effectiveness" = "government_effectiveness_estimate",
+                                 "Access to Electricity" = "access_to_electricity_percent_of_population",
                                  "Adult Literacy" = "literacy_rate_adult_total_percent_of_people_ages_15_and_above",
-                                 "Prevalence of Undernourishment" = "prevalence_of_undernourishment_percent_of_population"
+                                 "Annual GDP Growth" = "gdp_growth_annual_percent",
+                                 "Child Employment" = "children_in_employment_total_percent_of_children_ages_7_14",
+                                 "Gini Index" ="gini_index_world_bank_estimate",
+                                 "Government Effectiveness" = "government_effectiveness_estimate",
+                                 "Life Expectancy at Birth" = "life_expectancy_at_birth_total_years",
+                                 "Prevalence of Undernourishment" = "prevalence_of_undernourishment_percent_of_population",
+                                 "Primary School Enrollment" = "school_enrollment_primary_percent_gross"
 ),
 selected = "government_effectiveness_estimate"
 
@@ -281,9 +332,15 @@ selectInput(
   "varOI_x2",
   "X2 variable:",
   choices = c(
-    "Government Effectiveness" = "government_effectiveness_estimate",
+    "Access to Electricity" = "access_to_electricity_percent_of_population",
     "Adult Literacy" = "literacy_rate_adult_total_percent_of_people_ages_15_and_above",
+    "Annual GDP Growth" = "gdp_growth_annual_percent",
+    "Child Employment" = "children_in_employment_total_percent_of_children_ages_7_14",
+    "Gini Index" ="gini_index_world_bank_estimate",
+    "Government Effectiveness" = "government_effectiveness_estimate",
+    "Life Expectancy at Birth" = "life_expectancy_at_birth_total_years",
     "Prevalence of Undernourishment" = "prevalence_of_undernourishment_percent_of_population",
+    "Primary School Enrollment" = "school_enrollment_primary_percent_gross",
     "None" = "None" 
   ),
   selected = "None"
@@ -297,9 +354,15 @@ selectInput(
   "varOI_x3",
   "X3 variable:",
   choices = c(
-    "Government Effectiveness" = "government_effectiveness_estimate",
+    "Access to Electricity" = "access_to_electricity_percent_of_population",
     "Adult Literacy" = "literacy_rate_adult_total_percent_of_people_ages_15_and_above",
+    "Annual GDP Growth" = "gdp_growth_annual_percent",
+    "Child Employment" = "children_in_employment_total_percent_of_children_ages_7_14",
+    "Gini Index" ="gini_index_world_bank_estimate",
+    "Government Effectiveness" = "government_effectiveness_estimate",
+    "Life Expectancy at Birth" = "life_expectancy_at_birth_total_years",
     "Prevalence of Undernourishment" = "prevalence_of_undernourishment_percent_of_population",
+    "Primary School Enrollment" = "school_enrollment_primary_percent_gross",
     "None" = "None" 
   ),
   selected = "None"
@@ -322,7 +385,8 @@ selectInput(
 radioButtons("type", "Model Type:",
              c("Linear Model" = "toggleLinear",
                "Multivariate Regression" = "toggleMulti",
-               "Multivariate Regression w/ Interaction" = "toggleMultiinteraction"),
+               "Multivariate Regression w/ X1 & X2 Interaction" = "toggleMultiinteraction",
+               "Multivariate Regression w/ X1, X2 & X3 Interaction" = "toggleMultiinteraction3"),
              selected = "toggleLinear")
 
 ),
@@ -385,12 +449,15 @@ server <- function(input, output) {
         region_poverty %>%
             filter(year >= 2010) %>%
             filter(region == input$select_region) %>%
-            ggplot(aes(x = year, y = poverty, color = type, label = poverty)) +
+            mutate(poverty = round(poverty, 1)) %>%
+            ggplot(aes(x = year, y = poverty, color = type)) +
             geom_line(size = 1) +
             geom_point(size = 2) +
+            geom_text_repel(aes(label = poverty), size = 3.5, 
+                            color = "black", segment.color = "transparent") +
             labs(title = "Changes in Poverty in the Overall Sub-Saharan Region",
                  x = "Year",
-                 y = "Poverty Rate") + 
+                 y = "Poverty Rate (%)") + 
             ylim(32, 48) +
             scale_color_discrete(name = "Estimates",
                                 labels = c("Pre-Pandemic", 
@@ -404,12 +471,15 @@ server <- function(input, output) {
                 region_poverty %>%
                     filter(year >= 2010) %>%
                     filter(region == input$select_region) %>%
-                    ggplot(aes(x = year, y = poverty, color = type, label = poverty)) +
+                    mutate(poverty = round(poverty, 1)) %>%
+                    ggplot(aes(x = year, y = poverty, color = type)) +
                     geom_line(size = 1) +
                     geom_point(size = 2) +
+                    geom_text_repel(aes(label = poverty), size = 3.5, 
+                          color = "black", segment.color = "transparent") +
                     labs(title = "Changes in Poverty in Eastern/Central Africa",
                          x = "Year",
-                         y = "Poverty Rate") + 
+                         y = "Poverty Rate (%)") + 
                     ylim(32, 48) +
                     scale_color_discrete(name = "Estimates",
                                          labels = c("Pre-Pandemic", 
@@ -424,12 +494,15 @@ server <- function(input, output) {
                 region_poverty %>%
                     filter(year >= 2010) %>%
                     filter(region == input$select_region) %>%
+                    mutate(poverty = round(poverty, 1)) %>%
                     ggplot(aes(x = year, y = poverty, color = type, label = poverty)) +
                     geom_line(size = 1) +
                     geom_point(size = 2) +
+                    geom_text_repel(aes(label = poverty), size = 3.5, 
+                          color = "black", segment.color = "transparent") +
                     labs(title = "Changes in Poverty in Western/Southern Africa",
                          x = "Year",
-                         y = "Poverty Rate") + 
+                         y = "Poverty Rate (%)") + 
                     ylim(32, 48) +
                     scale_color_discrete(name = "Estimates",
                                          labels = c("Pre-Pandemic", 
@@ -448,9 +521,12 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
                                      "LBR", "LSO", "MDG", "MLI", "MOZ", "MRT", "MUS", "MWI", "NAM", "NER", "NGA",
                                      "RWA", "SDN", "SEN", "SLE", "SSD", "STP", "SWZ", "SYC", "TCD", "TGO", "TZA", 
                                      "UGA", "ZAF", "ZMB", "ZWE")) %>%
-                                     select(name, population, pov_increase), 
+                                     select(name, population, pov_increase, new_poor) %>%
+                                     mutate(pov_increase = round(pov_increase, 2)) %>%
+                                     mutate(new_poor = round(new_poor, 0)),
+                                     # formatCurrency(c("population"),currency = "", interval = 3, mark = ","),
                                      colnames = c("Country", "Population", 
-                                                  "Poverty Increase (%)"), 
+                                     "Poverty Increase % (POVCAL)", "Estimated # of New Poor"),
                                      options = list(
   pageLength = 10)
 )
@@ -739,20 +815,41 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
                        refresh = 0
               ) }}
         
-        if (input$type == "toggleMultiinteraction")
-          pov_model <-
-            stan_glm(data = indicator_data,
-                     family = gaussian,
-                     formula = paste(input$varOI_y, " ~ ", input$varOI_x, "*", input$varOI_x2),
-                     refresh = 0
-            )
+        if (input$type == "toggleMultiinteraction") {
+          
+          if(input$varOI_x3 == "None") {
+            pov_model <-
+              stan_glm(data = indicator_data,
+                       family = gaussian,
+                       formula = paste(input$varOI_y, " ~ ", input$varOI_x, "*", input$varOI_x2),
+                       refresh = 0
+              ) }
+          
+          if(input$varOI_x3 != "None") {
+            pov_model <-
+              stan_glm(data = indicator_data,
+                       family = gaussian,
+                       formula = paste(input$varOI_y, " ~ ", input$varOI_x, "*", input$varOI_x2, "+", input$varOI_x3),
+                       refresh = 0
+              ) }}
+        
+        if (input$type == "toggleMultiinteraction3") {
+
+            pov_model <-
+              stan_glm(data = indicator_data,
+                       family = gaussian,
+                       formula = paste(input$varOI_y, " ~ ", input$varOI_x, "*", input$varOI_x2, "*", input$varOI_x3),
+                       refresh = 0
+              ) }
         
         # Print a summary of the model. 
         
         tbl_regression(pov_model,
                        intercept = FALSE) %>%
           as_gt() %>%
-          tab_header(title = "Regression of Selected Y Variable") %>%
+          tab_header(title = "Regression Table",
+                     subtitle = "Predicted Value of Y given the selected X 
+                     covariates") %>%
           tab_source_note(md("Source: https://data.worldbank.org"))
         
     })
