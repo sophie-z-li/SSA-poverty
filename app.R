@@ -15,6 +15,13 @@ library(DT)
 library(rstanarm)
 theme_set(theme_bw())
 
+# Here, I am reading in all of my data. Although I cleaned/altered some data
+# in my `Gather.Rmd`, for the most part, I preferred loading my data directly
+# into my `App.R`. This was because I frequently got new ideas for my Shiny App
+# that required new columns/joining different data, so it ended up being more
+# efficient for me to just edit data directly here, as opposed to constantly
+# going back and creating new RDS/csv files.
+
 region_poverty <- read_xlsx("raw_data/finaldata.xlsx", 1)
 country_poverty <- read_xlsx("raw_data/finaldata.xlsx", 2)
 country_gdp <- read_xlsx("raw_data/finaldata.xlsx", 3)
@@ -24,34 +31,43 @@ income <- read_xlsx("raw_data/ssa_hfs.xlsx", 2)
 food <- read_xlsx("raw_data/ssa_hfs.xlsx", 3)
 education <- read_xlsx("raw_data/ssa_hfs.xlsx", 4)
 
-indicator_data <- read_csv("raw_data/indicator.csv", col_types = cols(
- .default = col_double(),
- country_code = col_character(),
- cooling_degree_days_projected_change_in_number_of_degree_celsius = 
-   col_logical(),
- heat_index_35_projected_change_in_days = col_logical(),
- maximum_5_day_rainfall_25_year_return_level_projected_change_in_mm = 
-   col_logical(),
- mean_drought_index_projected_change_unitless = col_logical(),
- people_using_safely_managed_sanitation_services_percent_of_population = 
-   col_logical()
-                             ))
+# Some of the lines below go over the 80 character line, but my column names
+# are naturally long (rip), and I kept the indentation for readability purposes.
 
-finaldata <- read_xlsx("raw_data/finaldata.xlsx", 3) %>%
+# `indicator_data` refers to the World Development Indicators that I downloaded
+# directly from the World Bank's public database. I used this for my model.
+
+indicator_data <- read_csv("raw_data/indicator.csv", col_types = cols(
+                          .default = col_double(),
+                          country_code = col_character(),
+                          cooling_degree_days_projected_change_in_number_of_degree_celsius = col_double(),
+                          heat_index_35_projected_change_in_days = col_logical(),
+                          maximum_5_day_rainfall_25_year_return_level_projected_change_in_mm = col_double(),
+                          mean_drought_index_projected_change_unitless = col_double(),
+                          people_using_safely_managed_sanitation_services_percent_of_population = col_double()))
+
+# The `finaldata` I read in below was provided by my supervisor Jose Motes. I
+# used this dataset primarily for my Regional and Country-level tabs.
+
+finaldata_old <- read_xlsx("raw_data/finaldata.xlsx", 3) %>%
   mutate(pov_increase = `2020_new` - `2019_new`,
          pov_increase_BA = `2020_BA` - `2019_BA`,
          pov_increase_MPO =`2020_MPO` - `2019_MPO`)
+
+# I read in population data and then joined it with my `finaldata` tibble in
+# order to calculate the estimated new poor in Sub-Saharan Africa based on the
+# projected increase in poverty.
 
 population <- read_xls("raw_data/population.xls", 1) %>%
   clean_names() %>%
   select(country_code, x2019) %>%
   rename(population = x2019)
 
-finaldata <- left_join(finaldata, population, 
+finaldata <- left_join(finaldata_old, population, 
                        by = c("code" = "country_code")) %>%
   mutate(new_poor = pov_increase*population)
 
-# Loading leaflet data
+# Here, I am loading my leaflet information. This was a wild ride LOL.
 
 data("wrld_simpl")
 world_simple_custom <- wrld_simpl
@@ -63,17 +79,35 @@ world_simple_custom@data <- left_join(world_simple_custom@data, finaldata,
 
 # Define UI ----
 ui <- fluidPage(
+  
+  # I explored with a lot of themes before finally settling on "flatly."
+  # For the longest of times, I actually had "slate," but unfortunately, the
+  # plot renderings didn't go well with a dark theme.
     
     theme = shinytheme("flatly"),
     
     titlePanel(
         h1("COVID-19's Impact on Poverty in Sub-Saharan Africa", 
            align = "center"),
+        
+        # My tab title kept on showing HTML code, so I add the below line in
+        # order to rename the tab to a more suitable moniker.
+        
         tags$head(HTML("<title>COVID-19's Impact on Poverty in 
                        Sub-Saharan Africa</title>"))),
     
+    # I used a navlistPanel because I wanted to be edgy in having my navigation
+    # interface on the left side of my Shiny App, compared to literally every
+    # other Shiny App I've seen, which always has the navigation up top.
+    
     navlistPanel(
         "Background",
+        
+        # Here, I give a brief introduction on what my project is about. The
+        # words are a copy-and-paste from the PDF document that I am writing
+        # with the World Bank's SSA team to update poverty numbers post-Covid-19
+        # outbreak.
+        
         tabPanel("Introduction",
                  br(),
                  HTML('<center><img src="Africa.png" width="400"></center>'),
@@ -107,6 +141,11 @@ ui <- fluidPage(
                  has created severe disturbances in the labor market, 
                  household income, food security, and educational attainment
                  within the region.")),
+        
+        # Here, I give a brief summary about the methodology used by the World
+        # Bank in calculating poverty, as well as the three types of poverty
+        # estimates that are referenced in this project.
+        
         tabPanel("Methodology",
                  br(),
                  HTML('<center><img src="worldbank.jpg" width="400"></center>'),
@@ -159,19 +198,32 @@ ui <- fluidPage(
                  p(tags$i("**While I gathered the above inputs, ultimately, the
                    finalized do-file was run by my project supervisor, Jose
                    Montes, due to my not having possession of certain 
-                   proprietary data."))
-                 ),
+                   proprietary data."))),
+        
+        # Here, I finally start talking about my data, yay!
+        
         "Data",
         tabPanel("Country-Level Data",
             h3("Examining Poverty by Country"),
             p("Below is an interactive map. Click on a country in the SSA region
             to explore."),
             leafletOutput("SSAmap"),
+            
+            # In creating my leaflet, I suffered a minor "NA" legend crisis.
+            # Adding the below HTML tag helped resolve it to some extent.
+            
             tags$style(type="text/css", "div.info.legend.leaflet-control br 
                        {clear: both;}"),
         br(),
         dataTableOutput("pov_change")
         ),
+        
+        # Starting out, I was super nervous because Shiny looked like a complex
+        # behemoth, and I wasn't even sure where to start in terms of making it
+        # interactive (or even making the app in general). So I do have a bit of
+        # a soft spot for the "Regional Data" because it was the first time I
+        # was able to make part of my Shiny App interactive.
+        
         tabPanel("Regional Data",
                  mainPanel(
                    h3("Comparing Poverty Differences By Region"),
@@ -224,6 +276,9 @@ ui <- fluidPage(
                    br(),
                    br())),
         
+        # My supervisor was pretty impressed by the graphs I made for this, and 
+        # I chuckle with glee because I made it with R and not Excel LOL.
+        
         tabPanel("High-Frequency Phone Surveys",
                  mainPanel(
                  h3("COVID-19 High Frequency Monitoring"),
@@ -245,6 +300,10 @@ ui <- fluidPage(
                  br(),
                  textOutput("PlotsIndicatorText"),
                  br())),
+        
+        # Below is my model. Coding my model stressed me out the most, but I'm
+        # very excited about the final product. It was also here that I self-
+        # coronated myself as the Style Emperor.
         
         tabPanel("Model",
                  h3("Predicting Poverty"),
@@ -276,9 +335,15 @@ ui <- fluidPage(
                                        "nourishment",
                                      "Primary School Enrollment" = "school")),
                        
+                       # I load a cute little glossary here for viewers to
+                       # reference the definition of various indicators.
+                       
                        textOutput("VariableDefinition"),
                        br(),
-                         selectInput(
+                       
+                       # Here, I ask the user to select the X1 covariate.
+                       
+                       selectInput(
                              "varOI_x",
                              "X1 variable:",
        choices = c(
@@ -296,11 +361,9 @@ ui <- fluidPage(
           "prevalence_of_undernourishment_percent_of_population",
         "Primary School Enrollment" = "school_enrollment_primary_percent_gross"
 ),
-selected = "government_effectiveness_estimate"
+selected = "government_effectiveness_estimate"),
 
-),
-
-# Select X2 Variable
+# Here, I ask the user to select the X2 covariate.
 
 selectInput(
   "varOI_x2",
@@ -320,12 +383,9 @@ selectInput(
     "Primary School Enrollment" = "school_enrollment_primary_percent_gross",
     "None" = "None" 
   ),
-  selected = "None"
-  
-  
-),
+  selected = "None"),
 
-# Select X3 variable
+# Here, I ask the user to select the X3 covariate.
 
 selectInput(
   "varOI_x3",
@@ -345,12 +405,9 @@ selectInput(
     "Primary School Enrollment" = "school_enrollment_primary_percent_gross",
     "None" = "None" 
   ),
-  selected = "None"
-  
-  
-),
+  selected = "None"),
 
-# Select Y variable(s) for model.
+# Here, I ask the user to select the Y1 output variable.
 
 selectInput(
     "varOI_y",
@@ -363,7 +420,8 @@ selectInput(
     selected = 
      "poverty_headcount_ratio_at_national_poverty_lines_percent_of_population"),
 
-# Select Model
+# Here, I ask the user to select the model they wish to use. Side note: radio
+# buttons are cute.
 
 radioButtons("type", "Model Type:",
              c("Linear Model" = "toggleLinear",
@@ -372,30 +430,30 @@ radioButtons("type", "Model Type:",
                  "toggleMultiinteraction",
                "Multivariate Regression w/ X1, X2 & X3 Interaction" = 
                  "toggleMultiinteraction3"),
-             selected = "toggleLinear")
-
-),
+             selected = "toggleLinear")),
 
 mainPanel(
     
-    # Output scatterplot with line of best fit based on model.
+    # Here, I load a scatterplot with a line of best fit. Credit goes to Wyatt
+    # for this idea. I actually borrowed it from his Gov 50 Shiny App, so want
+    # to give credit where credit is due.
     
     plotOutput("poverty_regression", height = 500),
     br(),
     
-    # Output summary of regression output.
+    # Here, I load my regression table.
     
     gt_output(outputId = "RegSum"),
+    
+    # Wyatt had this in his original Shiny App. I'm afraid to take it out
+    # because of app erroring.
     
     tags$style(
         type = "text/css",
         ".shiny-output-error {display: none;}",
-        ".shiny-output-error:before {display: none;}"
-    )
-)
-                 )
-        ),
+        ".shiny-output-error:before {display: none;}")))),
 
+# Here is where I flex about myself and my non-existent street-cred.
 
         "Others",
 tabPanel("About",
@@ -423,7 +481,7 @@ tabPanel("About",
            database (ESG), World Development Indicators, World Population, 
            COVID-19 High-Frequency Phone Survey results, Macro-Poverty Outlooks,
            as well as proprietary bank data."),
-         br(),),
+         br()),
         tabPanel("PDF",
                  tags$iframe(style="height:800px; width:100%; scrolling=yes", 
                              src="SSA_note_draft.pdf"))
@@ -432,7 +490,8 @@ tabPanel("About",
 # Define server logic ----
 server <- function(input, output) {
     
-    # Below is my interactive component for regional poverty
+    # Below is my interactive component for regional poverty. I have if-else
+    # statements that can handle four different choices.
     
     output$PlotsRegional <- renderPlot({
         if(input$select_region == "SSA") {
@@ -516,7 +575,11 @@ server <- function(input, output) {
         
     })
     
-output$pov_change <- renderDataTable(world_simple_custom@data %>%
+    # Below is my data table for the country-specific tab. Coding this took a
+    # long time, and I still can't figure out how to add commas to the digits
+    # rip.
+    
+    output$pov_change <- renderDataTable(world_simple_custom@data %>%
                                      filter(iso3 %in% c("AGO", "BDI", "BEN", 
                                      "BFA", "BWA", "CAF", "CIV", 
                                      "CMR", "COD", "COM", "CPV", "ETH", "GAB", 
@@ -536,11 +599,10 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
                                      colnames = c("Country", "Population", 
                                      "Poverty Increase % (POVCAL)", 
                                      "Estimated # of New Poor"),
-                                     options = list(
-  pageLength = 10)
-)
+                                     options = list(pageLength = 10))
     
-    # Leaflets
+    # Here is where I made my Leaflets. As you can see, they are a cool red
+    # color that vary in shade based on the percentage of poverty increase.
     
     pal <- colorNumeric(
       palette = "Reds",
@@ -570,13 +632,18 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
           labFormat = labelFormat(digits = 0))
     })
     
-    # Here are my plots and text for high-frequency phone surveys
+    # Here are my plots and text for high-frequency phone surveys. Some of the
+    # labs run over the 80 character line because they had to.
     
     output$PlotsIndicator <- renderPlot({
         if(input$select_indicator == "labor") {
             ggplot(labor, aes(y = poverty_increase, x = working_stop, 
                               color = country)) +
                 geom_point() +
+            
+            # Let's be real, using `geom_text_repel` over vanilla `geom_text`
+            # is the ultimate flex.
+            
                 geom_text_repel(aes(label = country, vjust = 2), 
                           size = 3.5, color = "black", 
                           segment.color = "transparent") +
@@ -637,11 +704,13 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
                             xlim(0, 100) +
                             ylim(-1, 5) +
                             geom_hline(yintercept = 0, linetype = "dashed")
-                    }
-                }
+                    }}
             }}
         
     })
+    
+    # These texts correspond with the above plots based on which World Bank
+    # High-Frequency phone survey indicator is selected.
     
     output$PlotsIndicatorText <- renderText({
         if(input$select_indicator == "labor") {
@@ -713,6 +782,9 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
             }
         }}
     })
+    
+    # Here is where I added the variable definitions for the Glossary on my
+    # Model page.
     
     output$VariableDefinition <- renderText({
       if(input$select_definition == "electricity") {
@@ -803,8 +875,8 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
         }}
     }})
     
-    # Render plot that displays a scatterplot and line of best fit when 1 X and 1
-    # Y variable are selected.
+    # Code below displays a scatterplot and line of best fit when the X1 and
+    # Y variables are selected.
     
   output$poverty_regression <- renderPlot({
       p = indicator_data %>%
@@ -815,7 +887,7 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
           labs(title = "Scatterplot Depicting Relationship Between the X1 and Y Variables",
                caption = "Source: World Bank Group")
         
-        # Add appropriate axis labels based on variables selected.
+        # Here, I'm adding axis labels that correspond to what is selected.
         
       if (input$varOI_x == "government_effectiveness_estimate")
             p <- p + xlab("Degree of Government Effectiveness")
@@ -825,6 +897,21 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
       if (input$varOI_x == 
           "prevalence_of_undernourishment_percent_of_population")
             p <- p + xlab("Prevalence of Undernourishment (%)")
+      if (input$varOI_x == 
+          "access_to_electricity_percent_of_population")
+        p <- p + xlab("Access to Electricity (%)")
+      if (input$varOI_x == 
+          "gdp_growth_annual_percent")
+        p <- p + xlab("Annual GDP Growth (%)")
+      if (input$varOI_x == 
+          "children_in_employment_total_percent_of_children_ages_7_14")
+        p <- p + xlab("Child Employment (%)")
+      if (input$varOI_x == 
+          "gini_index_world_bank_estimate")
+        p <- p + xlab("Gini Index")
+      if (input$varOI_x == 
+          "school_enrollment_primary_percent_gross")
+        p <- p + xlab("Primary School Enrollment")
                 
       if (input$varOI_y == 
           "poverty_headcount_ratio_at_1_90_a_day_2011_ppp_percent_of_population")
@@ -834,7 +921,8 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
                     p <- p + ylab("Poverty Rate at National Poverty Lines (%)")
                 
                         
-                        # Add appropriate trendline, based on user selection. 
+        # Here is a trendline for if the user selects Liner model. Thanks Wyatt
+        # for the inspiration :))))
                         
         if (input$type == "toggleLinear")
             p <- p + geom_smooth(method = "lm",
@@ -843,8 +931,8 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
                  p
     })
     
-    # Render regression output. First, choose the appropriate model, based on
-    # user input, and calculate using the selected X and Y variables.
+    # Here, I render all of my regression outputs, which correlate with
+    # what the user selects for co-variates and model types.
     
     output$RegSum <- render_gt({
         if(input$type == "toggleLinear")
@@ -911,7 +999,7 @@ output$pov_change <- renderDataTable(world_simple_custom@data %>%
                        refresh = 0
               ) }
         
-        # Print a summary of the model. 
+        # Here, I print the results of my model in a regression table.
         
         tbl_regression(pov_model,
                        intercept = FALSE) %>%
