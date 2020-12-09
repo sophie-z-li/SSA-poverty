@@ -23,7 +23,11 @@ library(maptools)
 
 ```
 
-```{r}
+```{r code}
+
+# Created `indicator.csv` here. Has a friendly error, but Wyatt said it was 
+# okay. This is the only code chuck I ended up using for my final project.
+# All the other code chunks below served as scratch paper.
 
 indicator_data <- read_csv("raw_data/ESGData.csv", col_types = 
                            cols(
@@ -64,51 +68,33 @@ indicator_data_new <- rbind(indicator_data, poverty_international) %>%
   clean_names() %>%
   filter(year == 2000:2019)
 
-# Ended up not using the below two lines of indented code because they were not 
-# relevant to my model.
-
-    # country_poverty <- read_xlsx("raw_data/finaldata.xlsx", 2)
-
-    # indicator_data_cleaned <- right_join(indicator_data, country_poverty, 
-    # by = c("country_code" = "code", "year"))
-
 write_csv(indicator_data_new, "indicator.csv")
 
 ``` 
 
-```{r}
-
-glimpse(indicator_data_new)
 
 
-```
+```{r modelscratchpaper}
 
-
-```{r}
-# have model of all three
-# maybe do 3 separate plots and then have user pick a subset for one column and
-# then do distribution for that
-
-#mutate(X=dplyr::recode(X, 
-#                         `0` = "Bipartisan",
-#                         `1` = "Partisan")) %>%
-# later, reference by "`Bipartisan Party`"
+# DID NOT END UP USING
 
 pov_model <- stan_glm(data = indicator_data_new,
                          family = gaussian,
                          formula = poverty_headcount_ratio_at_1_90_a_day_2011_ppp_percent_of_population  ~ 
-                           government_effectiveness_estimate +
-                           prevalence_of_undernourishment_percent_of_population +
-                           literacy_rate_adult_total_percent_of_people_ages_15_and_above +gdp_growth_annual_percent +
-                        access_to_electricity_percent_of_population +
-                        gini_index_world_bank_estimate +
-                        ease_of_doing_business_index_1_most_business_friendly_regulations,
-                         refresh = 0) 
+                                   government_effectiveness_estimate +
+                                   prevalence_of_undernourishment_percent_of_population +
+                                   literacy_rate_adult_total_percent_of_people_ages_15_and_above +
+                                   gdp_growth_annual_percent +
+                                   access_to_electricity_percent_of_population +
+                                   gini_index_world_bank_estimate + 
+                                   refresh = 0) 
 
 print(pov_model, detail = 4)
 ```
 
-```{r table}
+```{r tablescratchpaper}
+
+# DID NOT END UP USING
 
 tbl_regression(pov_model, label = 
                  list("government_effectiveness_estimate" 
@@ -127,32 +113,29 @@ tbl_regression(pov_model, label =
   
 ```
 
-```{r}
+```{r ppscratchpaper}
 
-new_obs <- tibble(government_effectiveness_estimate = c(-1.5, 2.1),
-                  prevalence_of_undernourishment_percent_of_population = c(10, 10),
-                  literacy_rate_adult_total_percent_of_people_ages_15_and_above = c(60, 60))
+# DID NOT END UP USING
+
+new_obs <- tibble(government_effectiveness_estimate 
+                  = c(-1.5, 2.1),
+                  prevalence_of_undernourishment_percent_of_population 
+                  = c(10, 10),
+                  literacy_rate_adult_total_percent_of_people_ages_15_and_above 
+                  = c(60, 60))
 
 posterior_predict(pov_model, newdata = new_obs) %>%
   as_tibble() %>%
   mutate_all(as.numeric)
 
-# Take user_input and then change the dataset to account for those user inputs.
-
-# maybe only change one value; if one country has really low effectiveness score and another country has good score, but
-# other scores are the same, then the posteriors
-
-```
-
-```{r}
-
-finaldata <- read_xlsx("raw_data/finaldata.xlsx", 3) %>%
-  mutate(pov_increase = `2020_new` - `2019_new`)
 
 ```
 
 
-```{r leaflet}
+
+```{r leafletscratchpaper}
+
+# DID NOT END UP USING (DATA WAS LOADED FROM ELSEWHERE IN MY SHINY APP)
 
 finaldata <- read_xlsx("raw_data/finaldata.xlsx", 3) %>%
   mutate(pov_increase = `2020_new` - `2019_new`,
@@ -167,7 +150,8 @@ data("wrld_simpl")
 
 world_simple_custom <- wrld_simpl
 
-world_simple_custom@data <- left_join(wrld_simpl@data, finaldata, by = c("ISO3" = "code"))
+world_simple_custom@data <- left_join(wrld_simpl@data, finaldata, 
+                                      by = c("ISO3" = "code"))
 
 
 data_na <- is.na(world_simple_custom@data$pov_increase)
@@ -193,7 +177,10 @@ world_simple_custom@polygons
 
 ```
 
-```{r}
+```{r datascratchpaper}
+
+# DID NOT END UP USING (DATA WAS LOADED FROM ELSEWHERE IN MY SHINY APP)
+
 finaldata <- read_xlsx("raw_data/finaldata.xlsx", 3) %>%
   mutate(pov_increase = `2020_new` - `2019_new`,
          pov_increase_BA = `2020_BA` - `2019_BA`,
